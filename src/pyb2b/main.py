@@ -30,7 +30,7 @@ class B2B(FlightManagement, Measures):
 
     .. code:: python
 
-        from b2b import b2b
+        from pyb2b import b2b
 
     A path to your certificate and your password must be set in the
     configuration file.

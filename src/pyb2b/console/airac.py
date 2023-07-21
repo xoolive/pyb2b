@@ -32,7 +32,7 @@ def main() -> None:
         logger.setLevel(logging.DEBUG)
 
     if args.airac is not None:
-        from b2b import b2b
+        from pyb2b import b2b
 
         assert b2b is not None
         b2b.aixm_dataset(args.airac)

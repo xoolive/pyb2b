@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "b2b"
+name = "pyb2b"
 version = "0.1.0"
 description = "Python API to EUROCONTROL NM B2B services"
 authors = ["Xavier Olive <git@xoolive.org>"]
