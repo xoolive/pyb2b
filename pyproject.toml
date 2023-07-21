@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyb2b"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python API to EUROCONTROL NM B2B services"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
@@ -12,17 +12,17 @@ include = [
 ]
 
 [tool.poetry.scripts]
-b2b_airac = 'b2b.console.airac:main'
+b2b_airac = 'pyb2b.console.airac:main'
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
-pandas = "^2.0.3"
-requests = "^2.31.0"
+pandas = ">=2.0.3"
+requests = ">=2.31.0"
 requests-pkcs12 = ">=1.10"
-pyopenssl = "^23.2.0"
-tqdm = "^4.65.0"
-rich = "^13.4.2"
-appdirs = "^1.4.4"
+pyopenssl = ">=23.2.0"
+tqdm = ">=4.65.0"
+rich = ">=13.4.2"
+appdirs = ">=1.4.4"
 
 [tool.poetry.group.dev.dependencies]
 poetry = ">=1.5.1"
@@ -30,11 +30,11 @@ pre-commit = ">=2.13.0"
 black = ">=21.6"
 mypy = ">=0.981"
 ruff = ">=0.0.247"
+pytest = ">=7.4.0"
+types-requests = ">=2.31.0.1"
+types-pyopenssl = ">=23.2.0.1"
+ipykernel = ">=6.24.0"
 requests = { extras = ["socks"], version = ">=2.27" }
-pytest = "^7.4.0"
-types-requests = "^2.31.0.1"
-types-pyopenssl = "^23.2.0.1"
-ipykernel = "^6.24.0"
 
 [build-system]
 requires = ["poetry-core"]
