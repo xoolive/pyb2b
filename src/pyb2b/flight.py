@@ -798,3 +798,39 @@ class FlightManagement:
             return FlightList.fromB2BReply(rep)
 
         return None
+
+    def forecasted_flights_list(
+        self,
+        start: None | str | pd.Timestamp = None,
+        stop: None | str | pd.Timestamp = None,
+        aerodrome: None | str = None,
+    ) -> FlightList | None:
+        """Return requested information about forecasted flights.
+
+        :param start: (UTC), by default current time
+        :param stop: (UTC), by default one hour later
+        :param aerodrome: Flights from and to this aerodrome.
+
+        **Example usage:**
+
+        .. jupyter-execute::
+
+            # Get all flights scheduled out of Paris CDG
+            nm_b2b.forecasted_flights_list(start="2023-09-23", aerodrome="EGCC")
+        """
+        if start is not None:
+            start = pd.Timestamp(start, tz="utc")
+
+        if stop is not None:
+            stop = pd.Timestamp(stop, tz="utc")
+        else:
+            stop = start + pd.Timedelta("1H")
+
+        data = REQUESTS["ForecastFlightPlanRequest"].format(
+            send_time=pd.Timestamp("now", tz="utc"),
+            start=start,
+            stop=stop,
+            aerodrome=aerodrome,
+        )
+        rep = self.post(data)  # type: ignore
+        return FlightList.fromB2BReply(rep)

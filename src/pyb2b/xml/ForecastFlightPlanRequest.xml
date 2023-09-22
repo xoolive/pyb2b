@@ -1,0 +1,30 @@
+ <flig:FlightListByAerodromeRequest xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:flig="eurocontrol/cfmu/b2b/FlightServices">
+    <!--Optional:-->
+    <sendTime>{send_time:%Y-%m-%d %H:%M:%S}</sendTime>
+    <dataset>
+    <type>FORECAST</type>
+    </dataset>
+    <includeProposalFlights>true</includeProposalFlights>
+    <includeForecastFlights>true</includeForecastFlights>
+    <trafficType>DEMAND</trafficType>
+    <!--Optional:-->
+    <trafficWindow>
+    <wef>{start:%Y-%m-%d %H:%M}</wef>
+    <unt>{stop:%Y-%m-%d %H:%M}</unt>
+    </trafficWindow>
+
+    <requestedFlightFields>icaoRoute</requestedFlightFields>
+    <requestedFlightFields>estimatedTimeOfArrival</requestedFlightFields>
+    <requestedFlightFields>routeChargeIndicator</requestedFlightFields>
+    <requestedFlightFields>fuelConsumptionIndicator</requestedFlightFields>
+    <requestedFlightFields>equipmentCapabilityAndStatus</requestedFlightFields>
+
+    <!--Optional:-->
+    <countsInterval>
+    <duration>0001</duration>
+    <step>0001</step>
+    </countsInterval>
+    <aerodrome>{aerodrome}</aerodrome>
+    <aerodromeRole>BOTH</aerodromeRole>
+</flig:FlightListByAerodromeRequest>
