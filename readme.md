@@ -26,11 +26,8 @@ This file must be placed in the user_config_dir.
 Then you start using pyb2b:
 
 ```python:
-import pandas as pd
 from pyb2b import b2b
 
-today = pd.Timestamp("now")
-
-res = b2b.flight_list(today, origin="LFBO")
-print(res)
+res = b2b.flight_list("now", origin="LFBO")
+res
 ```

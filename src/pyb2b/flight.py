@@ -816,7 +816,7 @@ class FlightManagement:
         .. jupyter-execute::
 
             # Get all flights scheduled out of Paris CDG
-            nm_b2b.forecasted_flights_list(start="2023-09-23", aerodrome="EGCC")
+            nm_b2b.forecasted_flights_list(start="2023-09-23", aerodrome="LFPG")
         """
         if start is not None:
             start = pd.Timestamp(start, tz="utc")
