@@ -24,7 +24,5 @@ def test_error() -> None:
 @pytest.mark.skipif(b2b is None, reason="No key available")
 def test_forecasted_flights() -> None:
     assert b2b is not None
-    res = b2b.forecasted_flights_list(
-        "2023-09-23 00:00", "2023-09-23 23:59", aerodrome="EGCC"
-    )
+    res = b2b.forecasted_flights_list(today, aerodrome="EGCC")
     assert res is not None
