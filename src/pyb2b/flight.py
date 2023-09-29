@@ -694,6 +694,8 @@ class FlightManagement:
         origin: None | str = None,
         destination: None | str = None,
         regulation: None | str = None,
+        include_proposal: bool = False,
+        include_forecast: bool = True,
         fields: None | list[str] = None,
     ) -> None | FlightList:
         """Returns requested information about flights matching a criterion.
@@ -756,6 +758,8 @@ class FlightManagement:
                     for field in default_flight_fields.union(_fields)
                 ),
                 airspace=airspace,
+                include_forecast=f"{include_forecast}".lower(),
+                include_proposal=f"{include_proposal}".lower(),
             )
             rep = self.post(data)  # type: ignore
             return FlightList.fromB2BReply(rep)
@@ -779,6 +783,8 @@ class FlightManagement:
                 ),
                 aerodrome=airport,
                 aerodromeRole=role,
+                include_forecast=f"{include_forecast}".lower(),
+                include_proposal=f"{include_proposal}".lower(),
             )
             rep = self.post(data)  # type: ignore
             return FlightList.fromB2BReply(rep)
@@ -793,6 +799,8 @@ class FlightManagement:
                     for field in default_flight_fields.union(_fields)
                 ),
                 regulation=regulation,
+                include_forecast=f"{include_forecast}".lower(),
+                include_proposal=f"{include_proposal}".lower(),
             )
             rep = self.post(data)  # type: ignore
             return FlightList.fromB2BReply(rep)
