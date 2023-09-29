@@ -5,11 +5,6 @@
 You must provide a config file with your key and password to use pyb2b.
 
 ```text
-[network]
-http.proxy = <>
-https.proxy = <>
-ssh.proxycommand = ""
-
 [nmb2b]
 pkcs12_filename = path/to/your/p12/file
 pkcs12_password = your_password
