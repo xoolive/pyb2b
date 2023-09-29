@@ -18,8 +18,8 @@
     <dataset>
         <type>OPERATIONAL</type>
     </dataset>
-    <includeProposalFlights>false</includeProposalFlights>
-    <includeForecastFlights>true</includeForecastFlights>
+    <includeProposalFlights>{include_proposal}</includeProposalFlights>
+    <includeForecastFlights>{include_forecast}</includeForecastFlights>
     <trafficType>DEMAND</trafficType>
     <trafficWindow>
         <wef>{start:%Y-%m-%d %H:%M}</wef>
