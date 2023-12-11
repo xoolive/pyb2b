@@ -1,0 +1,38 @@
+SearchBlock {
+    dock: left;
+    width: 16;
+    margin: 1;
+}
+SearchBlock.hidden {
+    display: none;
+}
+SearchButton Label {
+    text-align: center;
+}
+SearchButton Input {
+    border: none;
+    height: 1;
+}
+SearchButton Input:focus {
+    border: $success;
+    padding-left: 1;
+    height: 3;
+}
+Tabs.hidden {
+    display: none
+}
+Vertical {
+    height: 1fr
+}
+#results-container {
+    height: 1fr
+}
+Header.authenticated {
+    background: $secondary-lighten-1
+}
+Footer.authenticated {
+    background: $secondary-lighten-1
+}
+Footer.authenticated > .footer--key {
+    color: white
+}

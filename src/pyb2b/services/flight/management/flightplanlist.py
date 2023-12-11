@@ -8,11 +8,16 @@ from typing import Any, Callable, NoReturn, Type, TypeVar, cast
 from xml.dom import minidom
 from xml.etree import ElementTree
 
+import httpx
+
 import pandas as pd
 
-from .mixins import DataFrameMixin
-from .reply import B2BReply
-from .xml import REQUESTS
+from ....mixins import DataFrameMixin
+from ....types.flight.management.flightplanlist import (
+    FlightPlanListReply,
+    FlightPlanListRequest,
+)
+from ....xml import REQUESTS
 
 rename_cols = {
     "actualOffBlockTime": "AOBT",
@@ -248,7 +253,7 @@ class ParseFields:
         return self.unknown(point)
 
 
-class FlightInfo(B2BReply):
+class FlightInfo:
     @classmethod
     def from_file(cls, filename: str) -> "FlightInfo":
         et = ElementTree.parse(filename)
@@ -409,7 +414,7 @@ class FlightInfo(B2BReply):
 FlightListTypeVar = TypeVar("FlightListTypeVar", bound="FlightList")
 
 
-class FlightList(DataFrameMixin, B2BReply):
+class FlightList(DataFrameMixin):
     columns_options = dict(
         flightId=dict(style="blue bold"),
         callsign=dict(),
@@ -427,9 +432,7 @@ class FlightList(DataFrameMixin, B2BReply):
             super().__init__(*args, **kwargs)
 
     @classmethod
-    def fromB2BReply(
-        cls: Type[FlightListTypeVar], r: B2BReply
-    ) -> FlightListTypeVar:
+    def fromB2BReply(cls: Type[FlightListTypeVar], r) -> FlightListTypeVar:
         assert r.reply is not None
         return cls.fromET(r.reply)
 
@@ -540,7 +543,7 @@ class FlightList(DataFrameMixin, B2BReply):
             self.data = self.data.sort_values("EOBT")
 
 
-class FlightPlanList(FlightList):
+class FlightPlanList_(FlightList):
     columns_options = dict(
         flightId=dict(style="blue bold"),
         callsign=dict(),
@@ -584,7 +587,7 @@ class FlightPlanList(FlightList):
         if handle is None:
             return None
 
-        from . import b2b
+        from .. import b2b
 
         assert b2b is not None
 
@@ -596,8 +599,8 @@ class FlightPlanList(FlightList):
         )
 
 
-class FlightManagement:
-    def flight_search(
+class FlightPlanList:
+    def flightplanlist(
         self,
         start: None | str | pd.Timestamp = None,
         stop: None | str | pd.Timestamp = None,
@@ -605,7 +608,7 @@ class FlightManagement:
         callsign: None | str = None,
         origin: None | str = None,
         destination: None | str = None,
-    ) -> FlightPlanList:
+    ) -> FlightPlanListReply:
         """Returns a **minimum set of information** about flights.
 
         :param start: (UTC), by default current time
@@ -622,115 +625,67 @@ class FlightManagement:
         .. jupyter-execute::
 
             # All KLM flights bound for Amsterdam Schiphol
-            nm_b2b.flight_search(destination="EHAM", callsign="KLM*")
-
-        **See also:**
-
-            - `flight_list
-              <#traffic.data.eurocontrol.b2b.NMB2B.flight_list>`_ which
-              returns more comprehensive information about flights.
+            b2b.flight_search(destination="EHAM", callsign="KLM*")
 
         """
-
-        if start is not None:
-            start = pd.Timestamp(start, tz="utc")
-
-        if stop is not None:
-            stop = pd.Timestamp(stop, tz="utc")
-        else:
-            stop = start + pd.Timedelta("1H")
-
-        data = REQUESTS["FlightPlanListRequest"].format(
-            send_time=pd.Timestamp("now", tz="utc"),
-            aircraftId=callsign if callsign is not None else "*",
-            origin=origin if origin is not None else "*",
-            destination=destination if destination is not None else "*",
+        request = self._flightplanlist_request(
             start=start,
             stop=stop,
-        )
-
-        rep = self.post(data)  # type: ignore
-        return FlightPlanList.fromET(rep.reply.find("data"))
-
-    def flight_get(
-        self,
-        EOBT: str | pd.Timestamp,
-        callsign: str,
-        origin: str,
-        destination: str,
-    ) -> FlightInfo:
-        """Returns full information about a given flight.
-
-        This method requires all parameters:
-
-        :param EOBT: Estimated off-block time
-        :param callsign: **NO** wildcard accepted
-        :param origin: flying from a given airport (ICAO 4 letter code).
-        :param destination: flying to a given airport (ICAO 4 letter code).
-
-        This method is called when indexing the return value of a
-        :meth:`~traffic.data.eurocontrol.b2b.NMB2B.flight_search`.
-
-        """
-
-        EOBT = pd.Timestamp(EOBT, tz="utc")
-        data = REQUESTS["FlightRetrievalRequest"].format(
-            send_time=pd.Timestamp("now", tz="utc"),
+            *args,
             callsign=callsign,
             origin=origin,
             destination=destination,
-            eobt=EOBT,
         )
-        rep = self.post(data)  # type: ignore
-        return FlightInfo.fromET(rep.reply.find("data/flight"))
+        return self.post(request)  # type: ignore
 
-    def flight_list(
+    async def async_flightplanlist(
         self,
+        client: httpx.AsyncClient,
         start: None | str | pd.Timestamp = None,
         stop: None | str | pd.Timestamp = None,
         *args: Any,
-        airspace: None | str = None,
-        airport: None | str = None,
+        callsign: None | str = None,
         origin: None | str = None,
         destination: None | str = None,
-        regulation: None | str = None,
-        include_proposal: bool = False,
-        include_forecast: bool = True,
-        fields: None | list[str] = None,
-    ) -> None | FlightList:
-        """Returns requested information about flights matching a criterion.
+    ) -> FlightPlanListReply:
+        """Returns a **minimum set of information** about flights.
 
         :param start: (UTC), by default current time
         :param stop: (UTC), by default one hour later
 
-        Exactly one of the following parameters must be passed:
+        The method must take at least one of:
 
-        :param airspace: the name of an airspace aircraft fly through
-        :param airport: flying from or to a given airport (ICAO 4 letter code).
+        :param callsign: (wildcard accepted)
         :param origin: flying from a given airport (ICAO 4 letter code).
         :param destination: flying to a given airport (ICAO 4 letter code).
-        :param regulation: identifier of a regulation (see
-            :meth:`~traffic.data.eurocontrol.b2b.NMB2B.regulation_list`)
-        :param fields: additional fields to request. By default, a set of
-            (arguably) relevant fields are requested.
 
         **Example usage:**
 
         .. jupyter-execute::
 
-            # Get all flights scheduled out of Paris CDG
-            nm_b2b.flight_list(origin="LFPG")
-
-        **See also:**
-
-            - :meth:`~traffic.data.eurocontrol.b2b.NMB2B.flight_get` returns
-              full information about a given flight. It is also accessible by
-              indexing a
-              :class:`~traffic.data.eurocontrol.b2b.flight.FlightList` object
-              with the ``flightId`` field.
+            # All KLM flights bound for Amsterdam Schiphol
+            b2b.flight_search(destination="EHAM", callsign="KLM*")
 
         """
+        request = self._flightplanlist_request(
+            start=start,
+            stop=stop,
+            *args,
+            callsign=callsign,
+            origin=origin,
+            destination=destination,
+        )
+        return await self.async_post(client, request)  # type: ignore
 
+    def _flightplanlist_request(
+        self,
+        start: None | str | pd.Timestamp = None,
+        stop: None | str | pd.Timestamp = None,
+        *args: Any,
+        callsign: None | str = None,
+        origin: None | str = None,
+        destination: None | str = None,
+    ) -> FlightPlanListRequest:
         if start is not None:
             start = pd.Timestamp(start, tz="utc")
 
@@ -738,71 +693,36 @@ class FlightManagement:
             stop = pd.Timestamp(stop, tz="utc")
         else:
             stop = start + pd.Timedelta("1H")
+        now = pd.Timestamp("now", tz="utc")
+        request: FlightPlanListRequest = {
+            "fl:FlightPlanListRequest": {
+                "@xmlns:fl": "eurocontrol/cfmu/b2b/FlightServices",
+                "@xmlns:cm": "eurocontrol/cfmu/b2b/CommonServices",
+                "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "@xmlns:fw": "eurocontrol/cfmu/b2b/FlowServices",
+                "@xmlns:as": "eurocontrol/cfmu/b2b/AirspaceServices",
+                "@xmlns:ns8": "http://www.fixm.aero/base/4.0",
+                "@xmlns:ns7": "http://www.fixm.aero/flight/4.0",
+                "@xmlns:ns13": "http://www.fixm.aero/nm/1.0",
+                "@xmlns:ns9": "http://www.fixm.aero/base/4.1",
+                "@xmlns:ns12": "http://www.fixm.aero/eurextension/4.0",
+                "@xmlns:ns11": "http://www.w3.org/1999/xlink",
+                "@xmlns:ns10": "http://www.fixm.aero/flight/4.1",
+                "@xmlns:ns14": "http://www.fixm.aero/messaging/4.1",
+                "sendTime": f"{now:%Y-%m-%d %H:%M:%S}",
+                "aircraftId": callsign if callsign is not None else "*",
+                "aerodromeOfDeparture": origin if origin is not None else "*",
+                "nonICAOAerodromeOfDeparture": "false",
+                "airFiled": "false",
+                "aerodromeOfDestination": destination
+                if destination is not None
+                else "*",
+                "nonICAOAerodromeOfDestination": "false",
+                "estimatedOffBlockTime": {
+                    "wef": f"{start:%Y-%m-%d %H:%M}",
+                    "unt": f"{stop:%Y-%m-%d %H:%M}",
+                },
+            }
+        }
 
-        msg = """At most one parameter must be set among:
-- airspace
-- airport (or origin, or destination)
-        """
-        query = [airspace, airport, origin, destination, regulation]
-        if sum(x is not None for x in query) > 1:
-            raise RuntimeError(msg)
-
-        _fields = fields if fields is not None else []
-        if airspace is not None:
-            data = REQUESTS["FlightListByAirspaceRequest"].format(
-                send_time=pd.Timestamp("now", tz="utc"),
-                start=start,
-                stop=stop,
-                requestedFlightFields="\n".join(
-                    f"<requestedFlightFields>{field}</requestedFlightFields>"
-                    for field in default_flight_fields.union(_fields)
-                ),
-                airspace=airspace,
-                include_forecast=f"{include_forecast}".lower(),
-                include_proposal=f"{include_proposal}".lower(),
-            )
-            rep = self.post(data)  # type: ignore
-            return FlightList.fromB2BReply(rep)
-
-        if airport is not None or origin is not None or destination is not None:
-            role = "BOTH"
-            if origin is not None:
-                airport = origin
-                role = "DEPARTURE"
-            if destination is not None:
-                airport = destination
-                role = "ARRIVAL"
-
-            data = REQUESTS["FlightListByAerodromeRequest"].format(
-                send_time=pd.Timestamp("now", tz="utc"),
-                start=start,
-                stop=stop,
-                requestedFlightFields="\n".join(
-                    f"<requestedFlightFields>{field}</requestedFlightFields>"
-                    for field in default_flight_fields.union(_fields)
-                ),
-                aerodrome=airport,
-                aerodromeRole=role,
-                include_forecast=f"{include_forecast}".lower(),
-                include_proposal=f"{include_proposal}".lower(),
-            )
-            rep = self.post(data)  # type: ignore
-            return FlightList.fromB2BReply(rep)
-
-        if regulation is not None:
-            data = REQUESTS["FlightListByMeasureRequest"].format(
-                send_time=pd.Timestamp("now", tz="utc"),
-                start=start,
-                stop=stop,
-                requestedFlightFields="\n".join(
-                    f"<requestedFlightFields>{field}</requestedFlightFields>"
-                    for field in default_flight_fields.union(_fields)
-                ),
-                regulation=regulation,
-                include_forecast=f"{include_forecast}".lower(),
-                include_proposal=f"{include_proposal}".lower(),
-            )
-            rep = self.post(data)  # type: ignore
-            return FlightList.fromB2BReply(rep)
-
-        return None
+        return request

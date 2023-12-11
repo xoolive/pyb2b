@@ -5,9 +5,8 @@ from xml.etree import ElementTree
 
 import pandas as pd
 
-from .mixins import DataFrameMixin
-from .reply import B2BReply
-from .xml import REQUESTS
+from ....mixins import DataFrameMixin
+from ....xml import REQUESTS
 
 rename_cols = {"id": "tvId", "regulationState": "state", "subType": "type"}
 
@@ -42,7 +41,7 @@ default_regulation_fields: Set[str] = {
 RegulationListTypeVar = TypeVar("RegulationListTypeVar", bound="RegulationList")
 
 
-class RegulationInfo(B2BReply):
+class RegulationInfo:
     @property
     def regulation_id(self) -> str:
         assert self.reply is not None
@@ -130,7 +129,7 @@ class RegulationInfo(B2BReply):
         raise AttributeError(msg.format(cls, name))
 
 
-class RegulationList(DataFrameMixin, B2BReply):
+class RegulationList(DataFrameMixin):
     columns_options = dict(
         regulationId=dict(style="blue bold"),
         state=dict(),
@@ -148,13 +147,6 @@ class RegulationList(DataFrameMixin, B2BReply):
             super().__init__(data=None, **kwargs)
         else:
             super().__init__(*args, **kwargs)
-
-    @classmethod
-    def fromB2BReply(
-        cls: Type[RegulationListTypeVar], r: B2BReply
-    ) -> RegulationListTypeVar:
-        assert r.reply is not None
-        return cls.fromET(r.reply)
 
     @classmethod
     def fromET(
@@ -269,7 +261,7 @@ class RegulationList(DataFrameMixin, B2BReply):
                 )
 
 
-class Measures:
+class RegulationList:
     def regulation_list(
         self,
         start: None | str | pd.Timestamp = None,
