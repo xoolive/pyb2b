@@ -21,7 +21,7 @@ if not config_dir.exists():  # coverage: ignore
 pkcs12_filename =
 pkcs12_password =
 # mode =  # pick one of PREOPS (default) or OPS
-# version =  # 26.0.0 (default)
+# version =  # 27.0.0 (default)
     """
     config_dir.mkdir(parents=True)
     config_file.write_text(config_template)
@@ -38,7 +38,7 @@ b2b_mode: Literal["OPS", "PREOPS"]
 b2b_mode = config.get("global", "mode", fallback="PREOPS")  # type: ignore
 if b2b_mode not in ["OPS", "PREOPS"]:
     raise ImportError("mode must be one of OPS or PREOPS")
-b2b_version = config.get("global", "version", fallback="26.0.0")
+b2b_version = config.get("global", "version", fallback="27.0.0")
 
 if pkcs12_filename != "" and pkcs12_password != "":
     b2b = B2B(b2b_mode, b2b_version, pkcs12_filename, pkcs12_password)

@@ -29,6 +29,9 @@ def create_ssl_context(
     (private_key, cert, ca_certs) = load_key_and_certificates(
         pkcs12_data, pkcs12_password_bytes
     )
+
+    assert private_key is not None
+    assert cert is not None
     check_cert(cert)
 
     ssl_context = SSLContext(PROTOCOL_TLS)

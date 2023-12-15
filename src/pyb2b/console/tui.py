@@ -22,10 +22,8 @@ from textual.widgets import (
 
 import pandas as pd
 from pyb2b import b2b
-from pyb2b.types.flight.management.flightplanlist import (
-    FlightPlanListReply,
-    _Entry,
-)
+from pyb2b.services.flight.management import FlightPlanList
+from pyb2b.types.generated.flight import FlightPlanOrInvalidFiling
 
 # -- Formatters --
 
@@ -190,29 +188,34 @@ class B2B(App[None]):
             origin=origin,
             destination=destination,
         )
-        self.query_one("#results", Static).update(JSON(json.dumps(results)))
+        self.query_one("#results", Static).update(
+            JSON(json.dumps(results.json))
+        )
         self.update_table(results)
 
-    def update_table(self, data: None | FlightPlanListReply) -> None:
+    def update_table(self, flightplanlist: None | FlightPlanList) -> None:
         table = self.query_one(DataTable)
 
         table.clear(columns=True)
         table.add_columns(
             "date", "callsign", "from", "to", "EOBT", "flightid", "status"
         )
+        if flightplanlist is None:
+            return None
+        data = flightplanlist.json
 
         if data is None:
             return
 
-        def eobt(entry: _Entry) -> str:
+        def eobt(entry: FlightPlanOrInvalidFiling) -> str:
             if lfvp := entry.get("lastValidFlightPlan", None):
                 return lfvp["id"]["keys"]["estimatedOffBlockTime"]
             return ""
 
-        summaries = sorted(
-            data["fl:FlightPlanListReply"]["data"]["summaries"],
-            key=eobt,
-        )
+        summaries = data["data"]["summaries"]
+        if not isinstance(summaries, list):
+            summaries = [summaries]
+        summaries = sorted(summaries, key=eobt)
         table.add_rows(
             (
                 (

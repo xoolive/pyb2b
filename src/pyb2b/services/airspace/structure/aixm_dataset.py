@@ -10,10 +10,8 @@ from tqdm.asyncio import tqdm
 
 import pandas as pd
 
-from ....types.airspace.structure.aixm_dataset import (
-    CompleteAIXMDatasetReply,
-    File,
-)
+from ....types.generated.airspace import CompleteAIXMDatasetReply
+from ....types.generated.common import File
 
 if TYPE_CHECKING:
     from ....main import B2B
@@ -21,10 +19,13 @@ if TYPE_CHECKING:
 _log = logging.getLogger(__name__)
 
 
-class AIXMDataset:
+class _AIXMDataset:
     async def _async_file_get(
-        self, client: httpx.AsyncClient, file: File, output_dir: str | Path
-    ):
+        self,
+        client: httpx.AsyncClient,
+        file: File,
+        output_dir: str | Path,
+    ) -> None:
         self = cast(B2B, self)
 
         buffer = io.BytesIO()
@@ -70,28 +71,33 @@ class AIXMDataset:
             raise ValueError(
                 "airac_id must be a 4 digit number, or a timestamp"
             )
-        if not re.match(r"\d{4}", airac_id):
+        if isinstance(airac_id, str) and not re.match(r"\d{4}", airac_id):
             airac_id = pd.Timestamp(airac_id, tz="utc")
         if isinstance(airac_id, pd.Timestamp):
             airac_id = airac_cycle(airac_id)
+        assert isinstance(airac_id, str)
 
         now = pd.Timestamp("now", tz="utc")
 
-        res: CompleteAIXMDatasetReply
-        res = await self.async_post(
-            client,
-            {
-                "airspace:CompleteAIXMDatasetRequest": {
-                    "@xmlns:airspace": "eurocontrol/cfmu/b2b/AirspaceServices",
-                    "sendTime": f"{now:%Y-%m-%d %H:%M:%S}",
-                    "queryCriteria": {"airac": {"airacId": f"{airac_id}"}},
-                }
-            },
-        )
+        request = {
+            "airspace:CompleteAIXMDatasetRequest": {
+                "@xmlns:airspace": "eurocontrol/cfmu/b2b/AirspaceServices",
+                "sendTime": f"{now:%Y-%m-%d %H:%M:%S}",
+                "queryCriteria": {"airac": {"airacId": f"{airac_id}"}},
+            }
+        }
+        res = await self.async_post(client, request)
 
-        data = res["as:CompleteAIXMDatasetReply"]["data"]
+        reply: CompleteAIXMDatasetReply
+        reply = res["as:CompleteAIXMDatasetReply"]  # type: ignore
+        data = reply["data"]
         summaries = data["datasetSummaries"]
+        assert isinstance(summaries, list)
         entry = max(summaries, key=lambda x: x["updateId"])
-        for file in entry["files"]:  # don't do asyncio.gather (ReadTimeout)
-            await self.get(client, file, output_dir)
+        assert isinstance(entry, list)
+        files = entry["files"]
+        assert isinstance(files, list)
+        # don't do asyncio.gather (ReadTimeout)
+        for file in files:
+            await self._async_file_get(client, file, output_dir)
         return

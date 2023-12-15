@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from numbers import Integral, Real
-from typing import Any, ClassVar, TypeVar
+from pathlib import Path
+from typing import Any, ClassVar, Generic, Type, TypeVar
 
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
@@ -9,7 +11,31 @@ from rich.table import Table
 
 import pandas as pd
 
+from .types.generated.common import Reply
+
 D = TypeVar("D", bound="DataFrameMixin")
+J = TypeVar("J", bound="JSONMixin[Any]")
+T = TypeVar("T", bound=Reply)
+
+
+class JSONMixin(Generic[T]):
+    json: T
+
+    def __init__(self, json: T, *args: Any, **kwargs: Any) -> None:
+        self.json = json
+
+    @classmethod
+    def from_file(cls: Type[J], filename: str | Path) -> J:
+        path = Path(filename)
+        return cls(json.loads(path.read_text()))
+
+    def to_file(self, filename: None | str | Path = None) -> None:
+        if filename is None:
+            filename = " ".join(
+                [self.json["requestReceptionTime"], self.json["requestId"]]
+            )
+        path = Path(filename)
+        path.write_text(json.dumps(self.json, indent=2))
 
 
 class DataFrameMixin:
@@ -17,31 +43,25 @@ class DataFrameMixin:
         show_lines=False, box=SIMPLE_HEAVY
     )
     max_rows: int = 10
-    columns_options: None | dict[str, dict[str, Any]] = None
+    columns_options: ClassVar[None | dict[str, dict[str, Any]]] = None
     _obfuscate: None | list[str] = None
 
-    def __init__(self, data: pd.DataFrame, *args: Any, **kwargs: Any) -> None:
-        self.data = data
+    @property
+    def data(self) -> pd.DataFrame:
+        ...
 
-    def __getattr__(self: D, name: str) -> Any:
-        if (handle := getattr(self.data, name, None)) is not None:
-            if "DataFrame" in handle.__annotations__.get("return", ""):
-
-                def wrapped(*args: Any, **kwargs: Any) -> D:
-                    return self.__class__(handle(*args, **kwargs))
-
-                return wrapped
-            else:
-                return handle
-        raise AttributeError
+    def _repr_html_(self) -> None | str:
+        return self.data._repr_html_()  # type: ignore
 
     def __rich_console__(
-        self, console: Console, options: ConsoleOptions
+        self,
+        _console: Console,
+        _options: ConsoleOptions,
     ) -> RenderResult:
         my_table = Table(**self.table_options)
 
         if self.columns_options is None:
-            self.columns_options = dict(
+            self.columns_options = dict(  # type: ignore
                 (column, dict()) for column in self.data.columns
             )
 
