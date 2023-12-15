@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 # %%
 from pathlib import Path
 from typing import Any, TypedDict
@@ -276,7 +277,7 @@ items = process(
 from itertools import groupby
 from operator import itemgetter
 
-output = Path("src") / "pyb2b" / "types" / "generated"
+output = Path(".") / "src" / "pyb2b" / "types" / "generated"
 output.mkdir(parents=True, exist_ok=True)
 (output / "__init__.py").write_text("")
 
@@ -285,10 +286,7 @@ for package, elts in groupby(
     key=itemgetter("package"),
 ):
     file_ = output / f"{package}.py"
-    content = """
-from typing import Any, Literal, TypedDict, Union
-
-"""
+    content = "from typing import Literal, TypedDict, Union\n"
     elts_list = list(elts)
     list_dep_pkg = sum(
         (

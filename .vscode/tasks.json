@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Generate type specifications",
+      "type": "shell",
+      "command": "poetry run python scripts/datamodel.py",
+      "detail": "Generate files in src/types/generated based on the .xmi file.",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build"
+      }
+    }
+  ]
+}
