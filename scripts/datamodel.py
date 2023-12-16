@@ -267,6 +267,8 @@ def process(*identifiers: str) -> list[Specification]:
 items = process(
     "ID_eurocontrol.cfmu.cua.b2b.airspace.CompleteAIXMDatasetRequest",
     "ID_eurocontrol.cfmu.cua.b2b.airspace.CompleteAIXMDatasetReply",
+    "ID_eurocontrol.cfmu.cua.b2b.flight.FlightListByAerodromeRequest",
+    "ID_eurocontrol.cfmu.cua.b2b.flight.FlightListByAerodromeReply",
     "ID_eurocontrol.cfmu.cua.b2b.flight.FlightPlanListRequest",
     "ID_eurocontrol.cfmu.cua.b2b.flight.FlightPlanListReply",
     "ID_eurocontrol.cfmu.cua.b2b.flight.FlightRetrievalRequest",
