@@ -35,7 +35,7 @@ class JSONMixin(Generic[T]):
                 self.json["requestReceptionTime"],
                 self.json["requestId"],
             )
-            filename = f"{time} {id_}"
+            filename = f"{time} {self.__class__.__name__} {id_}"
         path = Path(filename).with_suffix(".json")
         path.write_text(json.dumps(self.json, indent=2))
 
