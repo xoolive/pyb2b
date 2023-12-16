@@ -31,10 +31,12 @@ class JSONMixin(Generic[T]):
 
     def to_file(self, filename: None | str | Path = None) -> None:
         if filename is None:
-            filename = " ".join(
-                [self.json["requestReceptionTime"], self.json["requestId"]]
+            time, id_ = (
+                self.json["requestReceptionTime"],
+                self.json["requestId"],
             )
-        path = Path(filename)
+            filename = f"{time} {id_}"
+        path = Path(filename).with_suffix(".json")
         path.write_text(json.dumps(self.json, indent=2))
 
 

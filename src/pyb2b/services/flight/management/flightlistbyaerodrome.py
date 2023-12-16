@@ -55,7 +55,7 @@ class _FlightListByAerodrome:
     ) -> FlightList:
         """Returns requested information about flights matching a criterion.
 
-        :param aerodrome: flying from or to a given airport (ICAO 4 letter code).
+        :param aerodrome: flying from or to a given airport (ICAO code)
         :param aerodrome_role: DEPARTURE, ARRIVAL, GLOBAL or ALTERNATE
         :param start: (UTC), by default current time
         :param stop: (UTC), by default one hour later
@@ -95,7 +95,7 @@ class _FlightListByAerodrome:
     ) -> FlightList:
         """Returns requested information about flights matching a criterion.
 
-        :param aerodrome: flying from or to a given airport (ICAO 4 letter code).
+        :param aerodrome: flying from or to a given airport (ICAO code)
         :param aerodrome_role:
         :param start: (UTC), by default current time
         :param stop: (UTC), by default one hour later
