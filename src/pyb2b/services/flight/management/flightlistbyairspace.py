@@ -5,19 +5,18 @@ import httpx
 import pandas as pd
 
 from ....mixins import DataFrameMixin, JSONMixin
-from ....types.generated.airspace import AerodromeICAOId
+from ....types.generated.airspace import AirspaceId
 from ....types.generated.flight import (
-    AerodromeRole,
     FlightField,
-    FlightListByAerodromeReply,
-    FlightListByAerodromeRequest,
+    FlightListByAirspaceReply,
+    FlightListByAirspaceRequest,
 )
 
 Request = TypedDict(
-    "Request", {"fl:FlightListByAerodromeRequest": FlightListByAerodromeRequest}
+    "Request", {"fl:FlightListByAirspaceRequest": FlightListByAirspaceRequest}
 )
 Reply = TypedDict(
-    "Reply", {"fl:FlightListByAerodromeReply": FlightListByAerodromeReply}
+    "Reply", {"fl:FlightListByAirspaceReply": FlightListByAirspaceReply}
 )
 
 default_fields: list[FlightField] = [
@@ -38,15 +37,14 @@ default_fields: list[FlightField] = [
 ]
 
 
-class FlightList(DataFrameMixin, JSONMixin[FlightListByAerodromeReply]):
+class FlightList(DataFrameMixin, JSONMixin[FlightListByAirspaceReply]):
     ...
 
 
-class _FlightListByAerodrome:
-    def flightlistbyaerodrome(
+class _FlightListByAirspace:
+    def flightlistbyairspace(
         self,
-        aerodrome: AerodromeICAOId,
-        aerodrome_role: AerodromeRole = "GLOBAL",
+        airspace: AirspaceId,
         start: None | str | pd.Timestamp = None,
         stop: None | str | pd.Timestamp = None,
         include_proposal: bool = False,
@@ -55,8 +53,7 @@ class _FlightListByAerodrome:
     ) -> FlightList:
         """Returns requested information about flights matching a criterion.
 
-        :param aerodrome: flying from or to a given airport (ICAO code)
-        :param aerodrome_role: DEPARTURE, ARRIVAL, GLOBAL or ALTERNATE
+        :param airspace: the identifier of an airspace
         :param start: (UTC), by default current time
         :param stop: (UTC), by default one hour later
         :param fields: additional fields to request. By default, a set of
@@ -66,13 +63,12 @@ class _FlightListByAerodrome:
 
         .. jupyter-execute::
 
-            # Get all flights scheduled out of Paris CDG
-            b2b.flightlistbyaerodrome(aerodrome="LFPG")
+            # Get all flights in Bordeaux ACC
+            b2b.flightlistbyairspace(airspace="LFBBBDX")
 
         """
-        request = self._flightlistbyaerodrome_request(
-            aerodrome,
-            aerodrome_role,
+        request = self._flightlistbyairspace_request(
+            airspace,
             start,
             stop,
             include_proposal,
@@ -80,13 +76,12 @@ class _FlightListByAerodrome:
             fields,
         )
         reply = self.post(request)  # type: ignore
-        return FlightList(reply["fl:FlightListByAerodromeReply"])
+        return FlightList(reply["fl:FlightListByAirspaceReply"])
 
-    async def async_flightlistbyaerodrome(
+    async def async_flightlistbyairspace(
         self,
         client: httpx.AsyncClient,
-        aerodrome: AerodromeICAOId,
-        aerodrome_role: AerodromeRole = "GLOBAL",
+        airspace: AirspaceId,
         start: None | str | pd.Timestamp = None,
         stop: None | str | pd.Timestamp = None,
         include_proposal: bool = False,
@@ -95,8 +90,7 @@ class _FlightListByAerodrome:
     ) -> FlightList:
         """Returns requested information about flights matching a criterion.
 
-        :param aerodrome: flying from or to a given airport (ICAO code)
-        :param aerodrome_role: DEPARTURE, ARRIVAL, GLOBAL or ALTERNATE
+        :param airspace: the identifier of an airspace
         :param start: (UTC), by default current time
         :param stop: (UTC), by default one hour later
         :param fields: additional fields to request. By default, a set of
@@ -110,9 +104,8 @@ class _FlightListByAerodrome:
             b2b.flight_list(aerodrome="LFPG")
 
         """
-        request = self._flightlistbyaerodrome_request(
-            aerodrome,
-            aerodrome_role,
+        request = self._flightlistbyairspace_request(
+            airspace,
             start,
             stop,
             include_proposal,
@@ -120,12 +113,11 @@ class _FlightListByAerodrome:
             fields,
         )
         reply = await self.async_post(client, request)  # type: ignore
-        return FlightList(reply["fl:FlightListByAerodromeReply"])
+        return FlightList(reply["fl:FlightListByAirspaceReply"])
 
-    def _flightlistbyaerodrome_request(
+    def _flightlistbyairspace_request(
         self,
-        aerodrome: AerodromeICAOId,
-        aerodrome_role: AerodromeRole,
+        airspace: AirspaceId,
         start: None | str | pd.Timestamp,
         stop: None | str | pd.Timestamp,
         include_proposal: bool,
@@ -142,7 +134,7 @@ class _FlightListByAerodrome:
             stop = start + pd.Timedelta("1H")
 
         # Many fields specified as necessary but cause errors 🤷‍♂️
-        request: FlightListByAerodromeRequest = {  # type: ignore
+        request: FlightListByAirspaceRequest = {  # type: ignore
             "sendTime": f"{now:%Y-%m-%d %H:%M:%S}",
             "dataset": {"type": "OPERATIONAL"},
             "includeProposalFlights": "true" if include_proposal else "false",
@@ -154,11 +146,13 @@ class _FlightListByAerodrome:
             },
             "requestedFlightFields": fields,
             "countsInterval": {"duration": "0001", "step": "0001"},
-            "aerodrome": aerodrome,
-            "aerodromeRole": aerodrome_role,
+            #  "worstLoadStateAtReferenceLocationType": "ENTRY",
+            #  "compareWithOtherTrafficType": "LOAD",
+            "calculationType": "ENTRY",
+            "airspace": airspace,
         }
         return {
-            "fl:FlightListByAerodromeRequest": {  # type: ignore
+            "fl:FlightListByAirspaceRequest": {  # type: ignore
                 "@xmlns:fl": "eurocontrol/cfmu/b2b/FlightServices",
                 **request,
             }

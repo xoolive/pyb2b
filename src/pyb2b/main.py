@@ -12,11 +12,13 @@ import xmltodict
 
 from .auth.pkcs12 import create_ssl_context
 from .services.airspace.structure.aixm_dataset import _AIXMDataset
-from .services.flight.management.flightlistbyaerodrome import (
+from .services.flight.management import (
     _FlightListByAerodrome,
+    _FlightListByAirspace,
+    _FlightListByMeasure,
+    _FlightPlanList,
+    _FlightRetrieval,
 )
-from .services.flight.management.flightplanlist import _FlightPlanList
-from .services.flight.management.flightretrieval import _FlightRetrieval
 from .services.flow.measures.regulationlist import _RegulationList
 from .types.generated.common import Reply
 
@@ -32,7 +34,9 @@ _log = logging.getLogger(__name__)
 
 class B2B(
     _AIXMDataset,
+    _FlightListByAirspace,
     _FlightListByAerodrome,
+    _FlightListByMeasure,
     _FlightPlanList,
     _FlightRetrieval,
     _RegulationList,

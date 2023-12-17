@@ -5,19 +5,19 @@ import httpx
 import pandas as pd
 
 from ....mixins import DataFrameMixin, JSONMixin
-from ....types.generated.airspace import AerodromeICAOId
 from ....types.generated.flight import (
-    AerodromeRole,
     FlightField,
-    FlightListByAerodromeReply,
-    FlightListByAerodromeRequest,
+    FlightListByMeasureMode,
+    FlightListByMeasureReply,
+    FlightListByMeasureRequest,
 )
+from ....types.generated.flow import MeasureId, RegulationId, ReroutingId
 
 Request = TypedDict(
-    "Request", {"fl:FlightListByAerodromeRequest": FlightListByAerodromeRequest}
+    "Request", {"fl:FlightListByMeasureRequest": FlightListByMeasureRequest}
 )
 Reply = TypedDict(
-    "Reply", {"fl:FlightListByAerodromeReply": FlightListByAerodromeReply}
+    "Reply", {"fl:FlightListByMeasureReply": FlightListByMeasureReply}
 )
 
 default_fields: list[FlightField] = [
@@ -38,15 +38,16 @@ default_fields: list[FlightField] = [
 ]
 
 
-class FlightList(DataFrameMixin, JSONMixin[FlightListByAerodromeReply]):
+class FlightList(DataFrameMixin, JSONMixin[FlightListByMeasureReply]):
     ...
 
 
-class _FlightListByAerodrome:
-    def flightlistbyaerodrome(
+class _FlightListByMeasure:
+    def flightlistbymeasure(
         self,
-        aerodrome: AerodromeICAOId,
-        aerodrome_role: AerodromeRole = "GLOBAL",
+        regulation: None | RegulationId = None,
+        rerouting: None | ReroutingId = None,
+        mode: FlightListByMeasureMode = "CONCERNED_BY_MEASURE",
         start: None | str | pd.Timestamp = None,
         stop: None | str | pd.Timestamp = None,
         include_proposal: bool = False,
@@ -55,8 +56,7 @@ class _FlightListByAerodrome:
     ) -> FlightList:
         """Returns requested information about flights matching a criterion.
 
-        :param aerodrome: flying from or to a given airport (ICAO code)
-        :param aerodrome_role: DEPARTURE, ARRIVAL, GLOBAL or ALTERNATE
+        :param measure: the identifier of a measure
         :param start: (UTC), by default current time
         :param stop: (UTC), by default one hour later
         :param fields: additional fields to request. By default, a set of
@@ -66,13 +66,14 @@ class _FlightListByAerodrome:
 
         .. jupyter-execute::
 
-            # Get all flights scheduled out of Paris CDG
-            b2b.flightlistbyaerodrome(aerodrome="LFPG")
+            # Get all flights in Bordeaux ACC
+            b2b.flightlistbyairspace(airspace="LFBBBDX")
 
         """
-        request = self._flightlistbyaerodrome_request(
-            aerodrome,
-            aerodrome_role,
+        request = self._flightlistbymeasure_request(
+            regulation,
+            rerouting,
+            mode,
             start,
             stop,
             include_proposal,
@@ -80,13 +81,14 @@ class _FlightListByAerodrome:
             fields,
         )
         reply = self.post(request)  # type: ignore
-        return FlightList(reply["fl:FlightListByAerodromeReply"])
+        return FlightList(reply["fl:FlightListByMeasureReply"])
 
-    async def async_flightlistbyaerodrome(
+    async def async_flightlistbymeasure(
         self,
         client: httpx.AsyncClient,
-        aerodrome: AerodromeICAOId,
-        aerodrome_role: AerodromeRole = "GLOBAL",
+        regulation: None | RegulationId = None,
+        rerouting: None | ReroutingId = None,
+        mode: FlightListByMeasureMode = "CONCERNED_BY_MEASURE",
         start: None | str | pd.Timestamp = None,
         stop: None | str | pd.Timestamp = None,
         include_proposal: bool = False,
@@ -95,8 +97,7 @@ class _FlightListByAerodrome:
     ) -> FlightList:
         """Returns requested information about flights matching a criterion.
 
-        :param aerodrome: flying from or to a given airport (ICAO code)
-        :param aerodrome_role: DEPARTURE, ARRIVAL, GLOBAL or ALTERNATE
+        :param airspace: the identifier of an airspace
         :param start: (UTC), by default current time
         :param stop: (UTC), by default one hour later
         :param fields: additional fields to request. By default, a set of
@@ -106,13 +107,14 @@ class _FlightListByAerodrome:
 
         .. jupyter-execute::
 
-            # Get all flights scheduled out of Paris CDG
-            b2b.flight_list(aerodrome="LFPG")
+            # Get all flights in Bordeaux ACC
+            b2b.flightlistbyairspace(airspace="LFBBBDX")
 
         """
-        request = self._flightlistbyaerodrome_request(
-            aerodrome,
-            aerodrome_role,
+        request = self._flightlistbymeasure_request(
+            regulation,
+            rerouting,
+            mode,
             start,
             stop,
             include_proposal,
@@ -120,12 +122,13 @@ class _FlightListByAerodrome:
             fields,
         )
         reply = await self.async_post(client, request)  # type: ignore
-        return FlightList(reply["fl:FlightListByAerodromeReply"])
+        return FlightList(reply["fl:FlightListByMeasureReply"])
 
-    def _flightlistbyaerodrome_request(
+    def _flightlistbymeasure_request(
         self,
-        aerodrome: AerodromeICAOId,
-        aerodrome_role: AerodromeRole,
+        regulation: None | RegulationId,
+        rerouting: None | ReroutingId,
+        mode: FlightListByMeasureMode,
         start: None | str | pd.Timestamp,
         stop: None | str | pd.Timestamp,
         include_proposal: bool,
@@ -141,8 +144,20 @@ class _FlightListByAerodrome:
         else:
             stop = start + pd.Timedelta("1H")
 
+        msg = "One of regulation and rerouting must be defined"
+        if regulation is None and rerouting is None:
+            raise AttributeError(msg)
+
+        measure: MeasureId
+        if regulation is not None:
+            if rerouting is not None:
+                raise AttributeError(msg)
+            measure = {"REGULATION": regulation}
+        else:
+            measure = {"REROUTING": rerouting}
+
         # Many fields specified as necessary but cause errors 🤷‍♂️
-        request: FlightListByAerodromeRequest = {  # type: ignore
+        request: FlightListByMeasureRequest = {  # type: ignore
             "sendTime": f"{now:%Y-%m-%d %H:%M:%S}",
             "dataset": {"type": "OPERATIONAL"},
             "includeProposalFlights": "true" if include_proposal else "false",
@@ -154,11 +169,11 @@ class _FlightListByAerodrome:
             },
             "requestedFlightFields": fields,
             "countsInterval": {"duration": "0001", "step": "0001"},
-            "aerodrome": aerodrome,
-            "aerodromeRole": aerodrome_role,
+            "measure": measure,
+            "mode": mode,
         }
         return {
-            "fl:FlightListByAerodromeRequest": {  # type: ignore
+            "fl:FlightListByMeasureRequest": {  # type: ignore
                 "@xmlns:fl": "eurocontrol/cfmu/b2b/FlightServices",
                 **request,
             }
