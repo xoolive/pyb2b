@@ -38,7 +38,7 @@ default_fields: list[FlightField] = [
 ]
 
 
-class FlightList(DataFrameMixin, JSONMixin[FlightListByMeasureReply]):
+class FlightListByMeasure(DataFrameMixin, JSONMixin[FlightListByMeasureReply]):
     ...
 
 
@@ -53,7 +53,7 @@ class _FlightListByMeasure:
         include_proposal: bool = False,
         include_forecast: bool = True,
         fields: list[FlightField] = default_fields,
-    ) -> FlightList:
+    ) -> FlightListByMeasure:
         """Returns requested information about flights matching a criterion.
 
         :param measure: the identifier of a measure
@@ -81,7 +81,7 @@ class _FlightListByMeasure:
             fields,
         )
         reply = self.post(request)  # type: ignore
-        return FlightList(reply["fl:FlightListByMeasureReply"])
+        return FlightListByMeasure(reply["fl:FlightListByMeasureReply"])
 
     async def async_flightlistbymeasure(
         self,
@@ -94,7 +94,7 @@ class _FlightListByMeasure:
         include_proposal: bool = False,
         include_forecast: bool = True,
         fields: list[FlightField] = default_fields,
-    ) -> FlightList:
+    ) -> FlightListByMeasure:
         """Returns requested information about flights matching a criterion.
 
         :param airspace: the identifier of an airspace
@@ -122,7 +122,7 @@ class _FlightListByMeasure:
             fields,
         )
         reply = await self.async_post(client, request)  # type: ignore
-        return FlightList(reply["fl:FlightListByMeasureReply"])
+        return FlightListByMeasure(reply["fl:FlightListByMeasureReply"])
 
     def _flightlistbymeasure_request(
         self,
@@ -153,8 +153,10 @@ class _FlightListByMeasure:
             if rerouting is not None:
                 raise AttributeError(msg)
             measure = {"REGULATION": regulation}
-        else:
+        elif rerouting is not None:
             measure = {"REROUTING": rerouting}
+        else:
+            raise ValueError("regulation or rerouting must be set.")
 
         # Many fields specified as necessary but cause errors 🤷‍♂️
         request: FlightListByMeasureRequest = {  # type: ignore

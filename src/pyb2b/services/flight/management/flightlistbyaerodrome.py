@@ -35,10 +35,13 @@ default_fields: list[FlightField] = [
     "mostPenalisingRegulation",
     "requestedFlightLevel",
     "wakeTurbulenceCategory",
+    "iataFlightDesignator",
 ]
 
 
-class FlightList(DataFrameMixin, JSONMixin[FlightListByAerodromeReply]):
+class FlightListByAerodrome(
+    DataFrameMixin, JSONMixin[FlightListByAerodromeReply]
+):
     ...
 
 
@@ -52,7 +55,7 @@ class _FlightListByAerodrome:
         include_proposal: bool = False,
         include_forecast: bool = True,
         fields: list[FlightField] = default_fields,
-    ) -> FlightList:
+    ) -> FlightListByAerodrome:
         """Returns requested information about flights matching a criterion.
 
         :param aerodrome: flying from or to a given airport (ICAO code)
@@ -80,7 +83,7 @@ class _FlightListByAerodrome:
             fields,
         )
         reply = self.post(request)  # type: ignore
-        return FlightList(reply["fl:FlightListByAerodromeReply"])
+        return FlightListByAerodrome(reply["fl:FlightListByAerodromeReply"])
 
     async def async_flightlistbyaerodrome(
         self,
@@ -92,7 +95,7 @@ class _FlightListByAerodrome:
         include_proposal: bool = False,
         include_forecast: bool = True,
         fields: list[FlightField] = default_fields,
-    ) -> FlightList:
+    ) -> FlightListByAerodrome:
         """Returns requested information about flights matching a criterion.
 
         :param aerodrome: flying from or to a given airport (ICAO code)
@@ -120,7 +123,7 @@ class _FlightListByAerodrome:
             fields,
         )
         reply = await self.async_post(client, request)  # type: ignore
-        return FlightList(reply["fl:FlightListByAerodromeReply"])
+        return FlightListByAerodrome(reply["fl:FlightListByAerodromeReply"])
 
     def _flightlistbyaerodrome_request(
         self,

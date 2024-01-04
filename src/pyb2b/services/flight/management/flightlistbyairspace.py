@@ -37,7 +37,9 @@ default_fields: list[FlightField] = [
 ]
 
 
-class FlightList(DataFrameMixin, JSONMixin[FlightListByAirspaceReply]):
+class FlightListByAirspace(
+    DataFrameMixin, JSONMixin[FlightListByAirspaceReply]
+):
     ...
 
 
@@ -50,7 +52,7 @@ class _FlightListByAirspace:
         include_proposal: bool = False,
         include_forecast: bool = True,
         fields: list[FlightField] = default_fields,
-    ) -> FlightList:
+    ) -> FlightListByAirspace:
         """Returns requested information about flights matching a criterion.
 
         :param airspace: the identifier of an airspace
@@ -76,7 +78,7 @@ class _FlightListByAirspace:
             fields,
         )
         reply = self.post(request)  # type: ignore
-        return FlightList(reply["fl:FlightListByAirspaceReply"])
+        return FlightListByAirspace(reply["fl:FlightListByAirspaceReply"])
 
     async def async_flightlistbyairspace(
         self,
@@ -87,7 +89,7 @@ class _FlightListByAirspace:
         include_proposal: bool = False,
         include_forecast: bool = True,
         fields: list[FlightField] = default_fields,
-    ) -> FlightList:
+    ) -> FlightListByAirspace:
         """Returns requested information about flights matching a criterion.
 
         :param airspace: the identifier of an airspace
@@ -113,7 +115,7 @@ class _FlightListByAirspace:
             fields,
         )
         reply = await self.async_post(client, request)  # type: ignore
-        return FlightList(reply["fl:FlightListByAirspaceReply"])
+        return FlightListByAirspace(reply["fl:FlightListByAirspaceReply"])
 
     def _flightlistbyairspace_request(
         self,

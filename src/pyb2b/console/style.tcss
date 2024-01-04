@@ -1,27 +1,24 @@
+.hidden {
+    display: none;
+}
 SearchBlock {
     dock: left;
     width: 16;
     margin: 1;
 }
-SearchBlock.hidden {
-    display: none;
-}
 SearchButton Label {
     text-align: center;
 }
 SearchButton Input {
-    border: none;
-    height: 1;
+    border: $primary;
+    padding-left: 1;
+    padding-right: 1;
+    height: 3;
 }
 SearchButton Input:focus {
     border: $success;
-    padding-left: 1;
-    height: 3;
 }
-Tabs.hidden {
-    display: none
-}
-Vertical {
+DataTable {
     height: 1fr
 }
 #results-container {
@@ -35,4 +32,59 @@ Footer.authenticated {
 }
 Footer.authenticated > .footer--key {
     color: white
+}
+Horizontal {
+    height: 3;
+}
+Horizontal Static#flight_id {
+    width: 14;
+    border: solid $primary;
+    padding-left: 1;
+    padding-right: 1;
+}
+Horizontal Static#callsign {
+    width: 10;
+    color: $secondary;
+    text-style: bold;
+    padding: 1;
+}
+Horizontal Static#iata {
+    width: 10;
+    color: $primary;
+    padding: 1;
+}
+Horizontal Static#origin {
+    width: 6;
+    padding: 1;
+}
+Horizontal Static#destination {
+    width: 6;
+    padding: 1;
+}
+Static#icaoRoute {
+    content-align: left top;
+    height: 7;
+    padding: 1;
+    width: 100%
+}
+Horizontal Static#status {
+    width: 25;
+    dock: right;
+    padding: 1;
+    text-align: right;
+}
+Horizontal Static#icao24 {
+    width: 8;
+    padding: 1;
+}
+Horizontal Static#typecode {
+    width: 6;
+    padding: 1;
+}
+Horizontal#flight_times {
+    height: 6;
+    padding: 1
+}
+Horizontal#flight_times Vertical {
+    width: 20;
 }

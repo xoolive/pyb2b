@@ -129,7 +129,7 @@ class RegulationInfo:
         raise AttributeError(msg.format(cls, name))
 
 
-class RegulationList(DataFrameMixin):
+class _RegulationList(DataFrameMixin):
     columns_options = dict(
         regulationId=dict(style="blue bold"),
         state=dict(),
@@ -261,7 +261,7 @@ class RegulationList(DataFrameMixin):
                 )
 
 
-class RegulationList:
+class _RegulationList:
     def regulation_list(
         self,
         start: None | str | pd.Timestamp = None,
@@ -269,7 +269,7 @@ class RegulationList:
         traffic_volumes: None | list[str] = None,
         regulations: None | str | list[str] = None,
         fields: None | list[str] = None,
-    ) -> None | RegulationList:
+    ) -> None | _RegulationList:
         """Returns information about a (set of) given regulation(s).
 
         :param start: (UTC), by default current time
@@ -332,4 +332,4 @@ class RegulationList:
             else "",
         )
         rep = self.post(data)  # type: ignore
-        return RegulationList.fromB2BReply(rep)
+        return _RegulationList.fromB2BReply(rep)
