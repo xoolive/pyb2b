@@ -33,6 +33,8 @@ Then you may run a text-user interface:
 poetry run b2b
 ```
 
+## Python interface
+
 The client is also available programmatically (Python):
 
 ```python
@@ -50,7 +52,8 @@ Asynchronous functions take a `httpx.AsyncClient` as a first argument, to be cal
 
 ```python
 import httpx
-import b2b
+
+from pyb2b import b2b
 
 async with httpx.AsyncClient(verify=b2b.context) as client:
     result = await b2b.async_...(
