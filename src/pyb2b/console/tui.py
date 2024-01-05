@@ -84,17 +84,21 @@ class SearchButton(Static):
             input.focus()
 
 
-class Flight(Static):
+class Flight(VerticalScroll):
+    BINDINGS = [Binding("s", "save", "Save JSON", show=True)]  # noqa: RUF012
+    flight: None | FlightRetrieval = None
+
     def compose(self) -> ComposeResult:
         with Horizontal():
             yield Static(id="flight_id")
             yield Static(id="callsign")
             yield Static(id="iata")
+            yield Static(id="status")
+        with Horizontal():
             yield Static(id="origin")
             yield Static(id="destination")
             yield Static(id="icao24")
             yield Static(id="typecode")
-            yield Static(id="status")
         with Horizontal(id="flight_times"):
             with Vertical():
                 yield Static(" EOBT/COBT/AOBT ")
@@ -113,8 +117,26 @@ class Flight(Static):
                 yield Static(id="ATOA")
         yield Static(id="icaoRoute")
 
+    def action_save(self) -> None:
+        if self.flight is None:
+            self.notify("No data to save", severity="error")
+            return
+        data = self.flight.json["data"]
+        if data is None:
+            self.notify("No data to save", severity="error")
+            return
+        f_id = data["flight"]["flightId"]
+        date = f_id["keys"]["estimatedOffBlockTime"]
+        date = date.split(" ")[0].replace("-", "")
+        origin = f_id["keys"]["aerodromeOfDeparture"]
+        destination = f_id["keys"]["aerodromeOfDestination"]
+        filename = f"{date}_{f_id['id']}_{origin}_{destination}.json"
+        self.notify(f"File saved: {filename}", severity="information")
+        self.flight.to_file(filename)
+
     def update_flight(self, flight_retrieval: FlightRetrieval) -> None:
-        data = flight_retrieval.json["data"]
+        self.flight = flight_retrieval
+        data = self.flight.json["data"]
         if data is None:
             return
         if (flight := data["flight"]) is None:
@@ -177,6 +199,8 @@ class Flight(Static):
         self.query_one("#iata", Static).update(
             f"{iata if isinstance(iata, set) else iata.get('id', '')}"
         )
+
+        self.focus()  # helps activating the Binding
 
 
 # -- Application --
