@@ -1,5 +1,11 @@
 import argparse
+import asyncio
 import logging
+from pathlib import Path
+
+import httpx
+
+from pyb2b import b2b
 
 description = """
 Get data from Network Manager B2B Service.
@@ -32,9 +38,11 @@ def main() -> None:
         logger.setLevel(logging.DEBUG)
 
     if args.airac is not None:
-        from pyb2b import b2b
 
-        assert b2b is not None
-        b2b.aixm_dataset(args.airac)
+        async def download_data() -> None:
+            async with httpx.AsyncClient() as client:
+                await b2b.async_aixm_request(client, args.airac, Path("."))
+
+        asyncio.run(download_data())
     else:
         raise RuntimeError("No action requested")

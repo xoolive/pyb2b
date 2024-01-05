@@ -1,21 +1,26 @@
 from __future__ import annotations
 
-import io
+import json
+import logging
 from pathlib import Path
-from typing import ClassVar, TypedDict
+from typing import Any, ClassVar, Literal, TypedDict
 from xml.dom import minidom
 from xml.etree import ElementTree
 
-from requests import Session
-from tqdm.rich import tqdm
+import httpx
+import xmltodict
 
-import pandas as pd
-
-from .flight import FlightManagement
-from .flow import Measures
-from .pkcs12 import Pkcs12Adapter
-from .reply import B2BReply
-from .xml import REQUESTS
+from .auth.pkcs12 import create_ssl_context
+from .services.airspace.structure.aixm_dataset import _AIXMDataset
+from .services.flight.management import (
+    _FlightListByAerodrome,
+    _FlightListByAirspace,
+    _FlightListByMeasure,
+    _FlightPlanList,
+    _FlightRetrieval,
+)
+from .services.flow.measures.regulationlist import _RegulationList
+from .types.generated.common import Reply
 
 
 class OperationMode(TypedDict):
@@ -24,7 +29,18 @@ class OperationMode(TypedDict):
     file_url: str
 
 
-class B2B(FlightManagement, Measures):
+_log = logging.getLogger(__name__)
+
+
+class B2B(
+    _AIXMDataset,
+    _FlightListByAirspace,
+    _FlightListByAerodrome,
+    _FlightListByMeasure,
+    _FlightPlanList,
+    _FlightRetrieval,
+    _RegulationList,
+):
     """
     The main instance of this class is provided as:
 
@@ -33,147 +49,104 @@ class B2B(FlightManagement, Measures):
         from pyb2b import b2b
 
     A path to your certificate and your password must be set in the
-    configuration file.
-
-    .. code:: python
-
-        >>> import traffic
-        >>> traffic.config_file
-        PosixPath('/home/xo/.config/traffic/traffic.conf')
-
-    Then edit the following line accordingly:
-
-    ::
-
-        [nmb2b]
-        pkcs12_filename =
-        pkcs12_password =
-        # mode = OPS  # default: PREOPS
-        # version =
-
+    configuration file. An ImportError is raised if the information is not
+    available.
 
     """
 
+    base_preops = "https://www.b2b.preops.nm.eurocontrol.int/"
+    base_ops = "https://www.b2b.nm.eurocontrol.int/"
+
     PREOPS: ClassVar[OperationMode] = {
-        "base_url": "https://www.b2b.preops.nm.eurocontrol.int/",
-        "post_url": (
-            "https://www.b2b.preops.nm.eurocontrol.int/"
-            "B2B_PREOPS/gateway/spec/"
-        ),
-        "file_url": (
-            "https://www.b2b.preops.nm.eurocontrol.int/"
-            "FILE_PREOPS/gateway/spec/"
-        ),
+        "base_url": base_preops,
+        "post_url": base_preops + "B2B_PREOPS/gateway/spec/",
+        "file_url": base_preops + "FILE_PREOPS/gateway/spec/",
     }
 
     OPS: ClassVar[OperationMode] = {
-        "base_url": "https://www.b2b.nm.eurocontrol.int/",
-        "post_url": "https://www.b2b.nm.eurocontrol.int/B2B_OPS/gateway/spec/",
-        "file_url": "https://www.b2b.nm.eurocontrol.int/FILE_OPS/gateway/spec/",
+        "base_url": base_ops,
+        "post_url": base_ops + "B2B_OPS/gateway/spec/",
+        "file_url": base_ops + "FILE_OPS/gateway/spec/",
     }
 
     def __init__(
         self,
-        mode: OperationMode,
+        mode: Literal["PREOPS", "OPS"],
         version: str,
-        session: Session,
         pkcs12_filename: str | Path,
         pkcs12_password: str,
     ) -> None:
-        self.mode = mode
+        self.mode: OperationMode = getattr(self.__class__, mode)
         self.version = version
-        self.session = session
-        self.session.mount(
-            mode["base_url"],
-            Pkcs12Adapter(
-                filename=Path(pkcs12_filename),
-                password=pkcs12_password,
-            ),
+        self.context = create_ssl_context(
+            Path(pkcs12_filename).read_bytes(),
+            pkcs12_password.encode(),
         )
 
-    def post(self, data: str) -> B2BReply:
-        res = self.session.post(
-            self.mode["post_url"] + self.version,
-            data=data.encode(),
-            headers={"Content-Type": "application/xml"},
-        )
-        res.raise_for_status()
+    def raise_xml_errors(self, res: httpx.Response) -> None:
         tree = ElementTree.fromstring(res.content)
 
         if tree is None:
             raise RuntimeError("Unexpected error")
+        status = tree.find("status")
+        assert status is not None
 
-        if tree.find("status").text != "OK":  # type: ignore
+        if status.text == "INVALID_INPUT":
+            errors: list[str] = []
+            for error in tree.findall("inputValidationErrors"):
+                rough_string = ElementTree.tostring(error)
+                errors_dict: Reply = xmltodict.parse(rough_string)
+                invalid = errors_dict["inputValidationErrors"]
+                if isinstance(invalid, list):
+                    invalid = invalid[0]
+                _type = invalid["type"]
+                try:
+                    if invalid.get("parameters", None) is not None:
+                        parameters = invalid["parameters"]
+                except Exception:
+                    errors.clear()
+                    break
+                errors.append(f"{_type} {json.dumps(parameters, indent=2)}")
+            if len(errors) > 0:
+                raise AttributeError(tree.tag + " " + "\n".join(errors))
+
+        if status.text != "OK":
+            reason = tree.find("reason")
+            reason = None
+            if reason is not None:
+                raise RuntimeError(f"{tree.tag} {status.text}: {reason.text}")
+
+            # otherwise
             rough_string = ElementTree.tostring(tree)
             reparsed = minidom.parseString(rough_string)
             raise RuntimeError(reparsed.toprettyxml(indent="  "))
 
-        return B2BReply.fromET(tree)
-
-    def get(self, path: str, output_dir: None | str | Path = None) -> None:
-        if output_dir is None:
-            output_dir = Path("~").expanduser()
-
-        if isinstance(output_dir, str):
-            output_dir = Path(output_dir)
-        output_dir = output_dir.expanduser()
-
-        if not output_dir.exists():
-            output_dir.mkdir()
-
-        filename = output_dir / path.split("/")[-1]
-        if filename.exists():
-            return
-
-        res = self.session.get(self.mode["file_url"] + path, stream=True)
+    def post(self, data: dict[str, Any]) -> Reply:
+        # TODO some pretty printing?
+        _log.debug(data)
+        _log.debug(xmltodict.unparse(data))
+        res = httpx.post(
+            url=self.mode["post_url"] + self.version,
+            data=xmltodict.unparse(data).encode(),
+            headers={"Content-Type": "application/xml"},
+            verify=self.context,
+        )
         res.raise_for_status()
+        self.raise_xml_errors(res)
+        return xmltodict.parse(res.content)  # type: ignore
 
-        total = int(res.headers["Content-Length"])
-        buffer = io.BytesIO()
-        for chunk in tqdm(
-            res.iter_content(1024),
-            total=total // 1024 + 1 if total % 1024 > 0 else 0,
-            desc=path.split("/")[-1],
-        ):
-            buffer.write(chunk)
-
-        with filename.open("wb") as fh:
-            buffer.seek(0)
-            fh.write(buffer.read())
-
-    def aixm_dataset(
+    async def async_post(
         self,
-        airac_id: str | int,
-        output_dir: None | Path | str = None,
-    ) -> None:
-        """
-        Downloads the EUROCONTROL data files following the AIXM standard.
-
-        :param airac_id: the AIRAC cycle, e.g. 2201 (1st cycle of 2022)
-        :param output_dir: where to download the data.
-
-        **See also**: :ref:`How to configure EUROCONTROL data files?`
-        """
-        data = REQUESTS["CompleteAIXMDatasetRequest"].format(
-            airac_id=airac_id, send_time=pd.Timestamp("now", tz="utc")
+        client: httpx.AsyncClient,
+        data: dict[str, Any],
+    ) -> Reply:
+        request = httpx.Request(
+            "POST",
+            url=self.mode["post_url"] + self.version,
+            data=xmltodict.unparse(data).encode(),
+            headers={"Content-Type": "application/xml"},
         )
-        res = self.post(data)
-        assert res.reply is not None
-
-        # There may be several dataset available.
-        # For now, we keep the latest one
-        latest = max(
-            res.reply.findall("data/datasetSummaries"),
-            key=lambda x: x.find("publicationDate").text,  # type: ignore
-            default=None,
-        )
-
-        if latest is None:
-            raise RuntimeError(f"No AIRAC {airac_id} available")
-
-        if output_dir is None:
-            output_dir = Path(".") / f"AIRAC_{airac_id}"
-
-        for elt in latest.findall("files"):
-            path: str = elt.find("id").text  # type: ignore
-            self.get(path, output_dir)
+        res = await client.send(request)
+        res.raise_for_status()
+        self.raise_xml_errors(res)
+        return xmltodict.parse(res.content)  # type: ignore

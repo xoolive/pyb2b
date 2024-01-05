@@ -1,59 +1,38 @@
 [tool.poetry]
 name = "pyb2b"
-version = "0.1.1"
+version = "0.2.0"
 description = "Python API to EUROCONTROL NM B2B services"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
 readme = "readme.md"
-include = [
-  "license.md",
-  "py.typed",
-  ".xml",
-]
+include = [ "license.md", "py.typed", "style.tcss" ]
 
 [tool.poetry.scripts]
-b2b_airac = 'pyb2b.console.airac:main'
+airac = "pyb2b.console.airac:main"
+b2b = "pyb2b.console.tui:main"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.10,<4.0"
+xmltodict = "^0.13.0"
 pandas = ">=2.0.3"
-requests = ">=2.31.0"
-requests-pkcs12 = ">=1.10"
-pyopenssl = ">=23.2.0"
-tqdm = ">=4.65.0"
+pitot = "^0.3.1"
+httpx = "^0.25.2"
 rich = ">=13.4.2"
+textual = "^0.42.0"
+tqdm = ">=4.65.0"
 appdirs = ">=1.4.4"
 
 [tool.poetry.group.dev.dependencies]
-poetry = ">=1.5.1"
 pre-commit = ">=2.13.0"
-black = ">=21.6"
 mypy = ">=0.981"
 ruff = ">=0.0.247"
 pytest = ">=7.4.0"
-types-requests = ">=2.31.0.1"
-types-pyopenssl = ">=23.2.0.1"
 ipykernel = ">=6.24.0"
-requests = { extras = ["socks"], version = ">=2.27" }
+textual-dev = "^1.2.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.black]
-line-length = 80
-target_version = ['py38', 'py39', 'py310', 'py311']
-include = '\.pyi?$'
-exclude = '''
-/(
-    __pycache__
-  | \.git
-  | \.mypy_cache
-  | \.ipynb_checkpoints
-  | build
-  | dist
-)/
-'''
 
 [tool.ruff]
 select = [
@@ -66,14 +45,13 @@ select = [
   "RUF"
 ]
 line-length = 80
-target-version = "py38"
-exclude = ["src/traffic/data/eurocontrol/b2b/"]  # will be in a different package
+target-version = "py310"
 
 [tool.ruff.isort]
 known-first-party = ["numpy", "pandas", "pyproj", "shapely"]
 
 [tool.mypy]
-python_version = 3.8
+python_version = "3.10"
 platform = "posix"
 
 color_output = true
