@@ -16,7 +16,7 @@ def check_cert(cert: typing.Optional[Certificate]) -> None:
     if not cert:
         raise ValueError("Broken client certificate")
 
-    if cert.not_valid_after < datetime.utcnow():
+    if cert.not_valid_after < datetime.now():  # noqa: DTZ005
         raise ValueError(
             f"Client certificate expired: Not After: {cert.not_valid_after}"
         )

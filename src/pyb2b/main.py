@@ -84,7 +84,11 @@ class B2B(
         )
 
     def raise_xml_errors(self, res: httpx.Response) -> None:
-        tree = ElementTree.fromstring(res.content)
+        try:
+            tree = ElementTree.fromstring(res.content)
+        except ElementTree.ParseError:
+            print(res.content)
+            raise RuntimeError()
 
         if tree is None:
             raise RuntimeError("Unexpected error")

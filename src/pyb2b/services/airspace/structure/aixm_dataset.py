@@ -2,7 +2,6 @@ import io
 import logging
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
 
 import httpx
 from pitot.airac import airac_cycle
@@ -12,9 +11,6 @@ import pandas as pd
 
 from ....types.generated.airspace import CompleteAIXMDatasetReply
 from ....types.generated.common import File
-
-if TYPE_CHECKING:
-    from ....main import B2B
 
 _log = logging.getLogger(__name__)
 
@@ -26,8 +22,6 @@ class _AIXMDataset:
         file: File,
         output_dir: str | Path,
     ) -> None:
-        self = cast(B2B, self)
-
         buffer = io.BytesIO()
         output_dir = Path(output_dir)
         path = output_dir / Path(file["id"].split("/")[-1])
@@ -65,7 +59,6 @@ class _AIXMDataset:
 
         **See also**: :ref:`How to configure EUROCONTROL data files?`
         """
-        self = cast(B2B, self)
 
         if isinstance(airac_id, int) and not re.match(r"\d{4}", str(airac_id)):
             raise ValueError(
