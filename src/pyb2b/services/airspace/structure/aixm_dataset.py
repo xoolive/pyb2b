@@ -70,6 +70,8 @@ class _AIXMDataset:
             airac_id = airac_cycle(airac_id)
         assert isinstance(airac_id, str)
 
+        print(f"Downloading AIRAC: {airac_id}")
+
         now = pd.Timestamp("now", tz="utc")
 
         request = {
@@ -87,7 +89,6 @@ class _AIXMDataset:
         summaries = data["datasetSummaries"]
         assert isinstance(summaries, list)
         entry = max(summaries, key=lambda x: x["updateId"])
-        assert isinstance(entry, list)
         files = entry["files"]
         assert isinstance(files, list)
         # don't do asyncio.gather (ReadTimeout)

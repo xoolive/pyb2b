@@ -13,9 +13,7 @@ Get data from Network Manager B2B Service.
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        prog="traffic nmb2b", description=description
-    )
+    parser = argparse.ArgumentParser(prog="airac", description=description)
 
     parser.add_argument(
         "-v",
@@ -25,9 +23,7 @@ def main() -> None:
         help="display logging messages",
     )
 
-    parser.add_argument(
-        "-a", "--airac", dest="airac", default=None, help="AIRAC version"
-    )
+    parser.add_argument("-a", dest="airac", default=None, help="AIRAC version")
 
     args = parser.parse_args()
 
@@ -40,9 +36,13 @@ def main() -> None:
     if args.airac is not None:
 
         async def download_data() -> None:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(verify=b2b.context) as client:
                 await b2b.async_aixm_request(client, args.airac, Path("."))
 
         asyncio.run(download_data())
     else:
         raise RuntimeError("No action requested")
+
+
+if __name__ == "__main__":
+    main()
