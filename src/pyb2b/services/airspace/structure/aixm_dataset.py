@@ -30,7 +30,7 @@ class _AIXMDataset:
 
         async with client.stream(
             "GET",
-            url=self.mode["file_url"] + file["id"],
+            url=self.mode["file_url"] + file["id"],  # type: ignore
         ) as response:
             total = int(file["fileLength"])
             async for chunk in tqdm(
@@ -79,10 +79,10 @@ class _AIXMDataset:
                 "queryCriteria": {"airac": {"airacId": f"{airac_id}"}},
             }
         }
-        res = await self.async_post(client, request)
+        res = await self.async_post(client, request)  # type: ignore
 
         reply: CompleteAIXMDatasetReply
-        reply = res["as:CompleteAIXMDatasetReply"]  # type: ignore
+        reply = res["as:CompleteAIXMDatasetReply"]
         data = reply["data"]
         summaries = data["datasetSummaries"]
         assert isinstance(summaries, list)
