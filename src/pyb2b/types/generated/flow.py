@@ -149,6 +149,16 @@ class RegulationCause(TypedDict, total=False):
     iataDelayCode: str
 
 
+class RegulationListRequest(common.Request, common.DateTimeMinutePeriod): ...
+
+
+class RegulationListReplyData(TypedDict, total=False): ...
+
+
+class RegulationListReply(common.Reply):
+    data: RegulationListReplyData
+
+
 HotspotSeverity = Literal["HIGH", "MEDIUM", "LOW"]
 
 HotspotStatus = Literal["DRAFT", "ACTIVE", "SOLVED", "ACCEPTABLE"]
