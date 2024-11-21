@@ -4,9 +4,13 @@ from typing import Any, Optional, Set, Type, TypeVar
 from xml.etree import ElementTree
 
 import pandas as pd
-
-from ....mixins import DataFrameMixin
-from ....xml import REQUESTS
+from pyb2b.mixins import DataFrameMixin, JSONMixin
+from pyb2b.types.generated.common import Request
+from pyb2b.types.generated.flow import (
+    RegulationListReply,
+    RegulationListRequest,
+)
+                                        RegulationListRequest)
 
 rename_cols = {"id": "tvId", "regulationState": "state", "subType": "type"}
 
@@ -129,136 +133,7 @@ class RegulationInfo:
         raise AttributeError(msg.format(cls, name))
 
 
-class _RegulationList(DataFrameMixin):
-    columns_options = dict(
-        regulationId=dict(style="blue bold"),
-        state=dict(),
-        type=dict(),
-        reason=dict(),
-        start=dict(),
-        stop=dict(),
-        tvId=dict(),
-        airspace=dict(),
-        aerodrome=dict(),
-    )
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        if len(args) == 0 and "data" not in kwargs:
-            super().__init__(data=None, **kwargs)
-        else:
-            super().__init__(*args, **kwargs)
-
-    @classmethod
-    def fromET(
-        cls: Type[RegulationListTypeVar], tree: ElementTree.Element
-    ) -> RegulationListTypeVar:
-        instance = cls()
-        instance.reply = tree
-        instance.build_df()
-        return instance
-
-    def __getitem__(self, item: str) -> Optional[RegulationInfo]:
-        assert self.reply is not None
-        for elt in self.reply.findall("data/regulations/item"):
-            key = elt.find("regulationId")
-            assert key is not None
-            if key.text == item:
-                return RegulationInfo.fromET(elt)
-
-        return None
-
-    def _ipython_key_completions_(self) -> Set[str]:
-        return set(self.data.RegulationId.unique())
-
-    def build_df(self) -> None:
-        assert self.reply is not None
-
-        refloc = "location/referenceLocation-"
-
-        self.data = pd.DataFrame.from_records(
-            [
-                {
-                    **{p.tag: p.text for p in elt if p.text is not None},
-                    **{
-                        p.tag: p.text
-                        for p in elt.find("location")  # type: ignore
-                        if p.text is not None
-                    },
-                    **{
-                        "start": elt.find(  # type: ignore
-                            "applicability/wef"
-                        ).text
-                        if elt.find("applicability") is not None
-                        else None,
-                        "stop": elt.find(  # type: ignore
-                            "applicability/unt"
-                        ).text
-                        if elt.find("applicability") is not None
-                        else None,
-                    },
-                    **{
-                        "airspace": elt.find(  # type: ignore
-                            refloc + "ReferenceLocationAirspace/id"
-                        ).text
-                        if elt.find(refloc + "ReferenceLocationAirspace")
-                        is not None
-                        else None,
-                        "aerodrome": elt.find(  # type: ignore
-                            refloc + "ReferenceLocationAerodrome/id"
-                        ).text
-                        if elt.find(refloc + "ReferenceLocationAerodrome")
-                        is not None
-                        else None,
-                    },
-                    **{
-                        "fl_min": elt.find(  # type: ignore
-                            "location/flightLevels/min/level"
-                        ).text
-                        if elt.find("location/flightLevels/min/level")
-                        is not None
-                        else 0,
-                        "fl_max": elt.find(  # type: ignore
-                            "location/flightLevels/max/level"
-                        ).text
-                        if elt.find("location/flightLevels/max/level")
-                        is not None
-                        else 999,
-                    },
-                }
-                for elt in self.reply.findall("data/regulations/item")
-            ]
-        )
-
-        if self.data.empty:
-            return
-
-        self.data = self.data.rename(columns=rename_cols)
-        self.data = self.data[
-            [
-                "regulationId",
-                "state",
-                "type",
-                "reason",
-                "start",
-                "stop",
-                "tvId",
-                "airspace",
-                "aerodrome",
-                "fl_min",
-                "fl_max",
-                "description",
-            ]
-        ]
-
-        for feat in ["start", "stop"]:
-            if feat in self.data.columns:
-                self.data = self.data.assign(
-                    **{
-                        feat: self.data[feat].apply(
-                            lambda x: pd.Timestamp(x, tz="utc")
-                        )
-                    }
-                )
+class RegulationList(DataFrameMixin, JSONMixin[RegulationListReply]): ...
 
 
 class _RegulationList:
@@ -269,7 +144,9 @@ class _RegulationList:
         traffic_volumes: None | list[str] = None,
         regulations: None | str | list[str] = None,
         fields: None | list[str] = None,
-    ) -> None | _RegulationList:
+        reasons: None | list[str] = None,
+        states: None | list[str] = None,
+    ) -> None | RegulationList:
         """Returns information about a (set of) given regulation(s).
 
         :param start: (UTC), by default current time
@@ -281,6 +158,8 @@ class _RegulationList:
 
         :param fields: additional fields to request. By default, a set of
             (arguably) relevant fields are requested.
+        :param reasons: regulation reasons to filter
+        :param states: regulation states to filter
 
         **Example usage:**
 
@@ -289,47 +168,75 @@ class _RegulationList:
             nm_b2b.regulation_list()
 
         """
+        request = self._regulation_list_request(
+            start,
+            stop,
+            traffic_volumes,
+            regulations,
+            fields,
+            reasons,
+            states,
+        )
+        reply = self.post(request)  # type: ignore
+        return RegulationList(reply["fw:RegulationListReply"])
 
+    def _regulation_list_request(
+        self,
+        start: None | str | pd.Timestamp = None,
+        stop: None | str | pd.Timestamp = None,
+        traffic_volumes: None | list[str] = None,
+        regulations: None | str | list[str] = None,
+        fields: None | list[str] = None,
+        reasons: None | list[str] = None,
+        states: None | list[str] = None,
+    ) -> Request:
+        now = pd.Timestamp("now", tz="utc")
+        # same as in flightlistbyaerodrome but will crash if start is None
         if start is not None:
             start = pd.Timestamp(start, tz="utc")
 
         if stop is not None:
             stop = pd.Timestamp(stop, tz="utc")
+        else:
+            stop = start + pd.Timedelta("1H")
 
-        _tvs = traffic_volumes if traffic_volumes is not None else []
-        _fields = fields if fields is not None else []
-        if isinstance(regulations, str):
-            regulations = [regulations]
-        _regulations = regulations if regulations is not None else []
-
-        data = REQUESTS["RegulationListRequest"].format(
-            send_time=pd.Timestamp("now", tz="utc"),
-            start=start,
-            stop=stop,
-            requestedRegulationFields=(
-                "<requestedRegulationFields>"
-                + "\n".join(
-                    f"<item>{field}</item>"
-                    for field in default_regulation_fields.union(_fields)
-                )
-                + "</requestedRegulationFields>"
-            ),
-            tvs=(
-                "<tvs>"
-                + "\n".join(f"<item>{tv}</item>" for tv in _tvs)
-                + "</tvs>"
-            )
-            if traffic_volumes is not None
-            else "",
-            regulations=(
-                "<regulations>"
-                + "\n".join(
-                    f"<item>{regulation}</item>" for regulation in _regulations
-                )
-                + "</regulations>"
-            )
-            if regulations is not None
-            else "",
+        fields = (
+            list(default_regulation_fields.union(fields))
+            if fields is not None
+            else list(default_regulation_fields)
         )
-        rep = self.post(data)  # type: ignore
-        return _RegulationList.fromB2BReply(rep)
+        _reasons = {"reasons": _itemize(reasons)} if reasons is not None else {}
+        _fields = (
+            {"requestedRegulationFields": _itemize(fields)}
+            if fields is not None
+            else {}
+        )
+        _states = {"regulationStates": _itemize(states)} if states is not None else {}
+        _regulations = {"refulations": regulations} if regulations is not None else {}
+        _traffic_volumes = (
+            {"tvId": traffic_volumes} if traffic_volumes is not None else {}
+        )
+
+        request: RegulationListRequest = {  # type: ignore
+            "sendTime": f"{now:%Y-%m-%d %H:%M:%S}",
+            "dataset": {"type": "OPERATIONAL"},
+            "queryPeriod": {
+                "wef": f"{start:%Y-%m-%d %H:%M}",
+                "unt": f"{stop:%Y-%m-%d %H:%M}",
+            },
+            **_reasons,
+            **_fields,
+            **_states,
+            **_regulations,
+            **_traffic_volumes,
+        }
+        return {
+            "fw:RegulationListRequest": {
+                "@xmlns:fw": "eurocontrol/cfmu/b2b/FlowServices",
+                **request,
+            }
+        }
+
+
+def _itemize(items: list[str]) -> dict[str, str]:
+    return {"item": item for item in items}
