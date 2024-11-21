@@ -1,6 +1,6 @@
 import os
 import typing
-from datetime import datetime
+from datetime import datetime, timezone
 from ssl import PROTOCOL_TLS, SSLContext
 from tempfile import NamedTemporaryFile
 
@@ -16,7 +16,7 @@ def check_cert(cert: typing.Optional[Certificate]) -> None:
     if not cert:
         raise ValueError("Broken client certificate")
 
-    if cert.not_valid_after < datetime.now():  # noqa: DTZ005
+    if cert.not_valid_after_utc < datetime.now(tz=timezone.utc):
         raise ValueError(
             f"Client certificate expired: Not After: {cert.not_valid_after}"
         )
