@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import configparser
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -13,6 +14,9 @@ __all__ = ["b2b"]
 b2b: B2B
 
 config_dir = Path(user_config_dir("b2b"))
+if xdg_config := os.getenv("XDG_CONFIG_HOME"):
+    config_dir = Path(xdg_config) / "b2b"
+
 config_file = config_dir / "b2b.conf"
 
 if not config_dir.exists():  # coverage: ignore
