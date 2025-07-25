@@ -1,5 +1,13 @@
 from typing import Literal, TypedDict, Union
 
+DateYearMonthDay = str
+
+
+class DateYearMonthDayPeriod(TypedDict, total=False):
+    wef: DateYearMonthDay
+    unt: DateYearMonthDay
+
+
 DateTimeSecond = str
 
 AirNavigationUnitId = str
@@ -11,17 +19,9 @@ class Request(TypedDict, total=False):
     sendTime: DateTimeSecond
 
 
-DateYearMonthDay = str
-
-
-class DateYearMonthDayPeriod(TypedDict, total=False):
-    wef: DateYearMonthDay
-    unt: DateYearMonthDay
-
+FileType = str
 
 FileId = str
-
-FileType = str
 
 
 class File(TypedDict, total=False):
@@ -29,20 +29,6 @@ class File(TypedDict, total=False):
     type: FileType
     releaseTime: DateTimeSecond
     fileLength: str
-
-
-ServiceGroup = Literal[
-    "COMMON", "GENERAL_INFORMATION", "AIRSPACE", "FLOW", "FLIGHT", "FFICE"
-]
-
-
-class Error(TypedDict, total=False):
-    attributes: str
-    group: ServiceGroup
-    category: str
-    type: str
-    parameters: str
-    message: str
 
 
 ReplyStatus = Literal[
@@ -65,6 +51,19 @@ ReplyStatus = Literal[
     "INVALID_DATASET",
 ]
 
+ServiceGroup = Literal[
+    "COMMON", "GENERAL_INFORMATION", "AIRSPACE", "FLOW", "FLIGHT", "FFICE"
+]
+
+
+class Error(TypedDict, total=False):
+    attributes: str
+    group: ServiceGroup
+    category: str
+    type: str
+    parameters: str
+    message: str
+
 
 class Reply(TypedDict, total=False):
     requestReceptionTime: DateTimeSecond
@@ -78,11 +77,7 @@ class Reply(TypedDict, total=False):
     reason: str
 
 
-DurationHourMinute = str
-
 SimulationState = Literal["INITIAL", "CURRENT"]
-
-DatasetType = Literal["FORECAST", "OPERATIONAL", "SIMULATION"]
 
 SimulationId = str
 
@@ -94,6 +89,9 @@ SimulationType = Literal[
 class SimulationIdentifier(TypedDict, total=False):
     simulationType: SimulationType
     simulationId: SimulationId
+
+
+DatasetType = Literal["FORECAST", "OPERATIONAL", "SIMULATION"]
 
 
 class Dataset(TypedDict, total=False):
@@ -110,7 +108,11 @@ class DateTimeMinutePeriod(TypedDict, total=False):
     unt: DateTimeMinute
 
 
+DurationHourMinute = str
+
 DistanceNM = str
+
+DurationHourMinuteSecond = str
 
 TimeHourMinute = str
 
@@ -118,24 +120,6 @@ TimeHourMinute = str
 class TimeHourMinutePeriod(TypedDict, total=False):
     wef: TimeHourMinute
     unt: TimeHourMinute
-
-
-ReceivedOrSent = Literal["RECEIVED", "SENT", "UNKNOWN"]
-
-SignedDurationHourMinuteSecond = str
-
-Cost = str
-
-DurationHourMinuteSecond = str
-
-DistanceM = str
-
-LatitudeSide = Literal["NORTH", "SOUTH"]
-
-
-class Latitude(TypedDict, total=False):
-    angle: str
-    side: LatitudeSide
 
 
 LongitudeSide = Literal["EAST", "WEST"]
@@ -146,12 +130,26 @@ class Longitude(TypedDict, total=False):
     side: LongitudeSide
 
 
+LatitudeSide = Literal["NORTH", "SOUTH"]
+
+
+class Latitude(TypedDict, total=False):
+    angle: str
+    side: LatitudeSide
+
+
 class Position(TypedDict, total=False):
     latitude: Latitude
     longitude: Longitude
 
 
-DurationMinute = str
+SignedDurationHourMinuteSecond = str
+
+Cost = str
+
+DistanceM = str
+
+ReceivedOrSent = Literal["RECEIVED", "SENT", "UNKNOWN"]
 
 Sign = Literal["PLUS", "MINUS"]
 
@@ -161,10 +159,16 @@ class ShiftHourMinute(TypedDict, total=False):
     value: DurationHourMinute
 
 
+DurationMinute = str
+
 Colours = str
 
-FlightLevelM = str
+WeightKg = str
 
 Duration = str
 
-WeightKg = str
+FlightLevelM = str
+
+PlanDataId = str
+
+UserId = str

@@ -171,7 +171,7 @@ class _FlightPlanList:
         if stop is not None:
             stop = pd.Timestamp(stop, tz="utc")
         else:
-            stop = start + pd.Timedelta("1H")
+            stop = start + pd.Timedelta("1h")
         now = pd.Timestamp("now", tz="utc")
         request: FlightPlanListRequest = {
             "sendTime": f"{now:%Y-%m-%d %H:%M:%S}",

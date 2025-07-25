@@ -41,8 +41,7 @@ default_fields: list[FlightField] = [
 
 class FlightListByAerodrome(
     DataFrameMixin, JSONMixin[FlightListByAerodromeReply]
-):
-    ...
+): ...
 
 
 class _FlightListByAerodrome:
@@ -138,11 +137,13 @@ class _FlightListByAerodrome:
         now = pd.Timestamp("now", tz="utc")
         if start is not None:
             start = pd.Timestamp(start, tz="utc")
+        else:
+            start = now
 
         if stop is not None:
             stop = pd.Timestamp(stop, tz="utc")
         else:
-            stop = start + pd.Timedelta("1H")
+            stop = start + pd.Timedelta("1h")
 
         # Many fields specified as necessary but cause errors 🤷‍♂️
         request: FlightListByAerodromeRequest = {  # type: ignore

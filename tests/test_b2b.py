@@ -1,7 +1,7 @@
 import pytest
-from pyb2b import b2b
 
 import pandas as pd
+from pyb2b import b2b
 
 today = pd.Timestamp("now")
 
@@ -19,3 +19,10 @@ def test_error() -> None:
     assert b2b is not None
     with pytest.raises(AttributeError):
         b2b.flightplanlist(today, origin="LBO")
+
+
+@pytest.mark.skipif(b2b is None, reason="No key available")
+def test_regulation() -> None:
+    assert b2b is not None
+    res = b2b.regulationlist(today)
+    assert res is not None

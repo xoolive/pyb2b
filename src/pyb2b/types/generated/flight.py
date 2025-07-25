@@ -4,6 +4,10 @@ from . import airspace, common, flow
 
 AerodromeRole = Literal["DEPARTURE", "ARRIVAL", "GLOBAL", "ALTERNATE"]
 
+AircraftOperatorICAOId = str
+
+TrafficType = Literal["DEMAND", "REGULATED_DEMAND", "LOAD"]
+
 FlightField = Literal[
     "divertedAerodromeOfDestination",
     "readyEstimatedOffBlockTime",
@@ -130,8 +134,6 @@ FlightField = Literal[
     "aoReroutingFeedbacks",
 ]
 
-TrafficType = Literal["DEMAND", "REGULATED_DEMAND", "LOAD"]
-
 
 class FlightListRequest(common.Request):
     dataset: common.Dataset
@@ -142,9 +144,6 @@ class FlightListRequest(common.Request):
     worstLoadStateAtReferenceLocationType: flow.CountsCalculationType
     compareWithOtherTrafficType: TrafficType
     requestedFlightFields: Union[FlightField, list[FlightField]]
-
-
-AircraftOperatorICAOId = str
 
 
 class FlightListByLocationRequest(FlightListRequest):
@@ -160,206 +159,24 @@ class FlightListByAerodromeRequest(FlightListByLocationRequest):
     aerodromeRole: AerodromeRole
 
 
-FlightPlanStatus = Literal[
-    "FILED",
-    "AIRBORNE",
-    "SUSPENDED",
-    "CLOSED",
-    "BACKUP",
-    "TACT_DELETED",
-    "TERMINATED",
-    "OFFBLOCKS",
-]
-
-IFPLId = str
-
-ExtendedAircraftICAOId = str
-
-
-class FlightKeys(TypedDict, total=False):
-    aircraftId: ExtendedAircraftICAOId
-    aerodromeOfDeparture: airspace.AerodromeICAOId
-    nonICAOAerodromeOfDeparture: Literal["true", "false"]
-    airFiled: Literal["true", "false"]
-    aerodromeOfDestination: airspace.AerodromeICAOId
-    nonICAOAerodromeOfDestination: Literal["true", "false"]
-    estimatedOffBlockTime: common.DateTimeMinute
-
-
-class FlightIdentificationOutput(TypedDict, total=False):
-    id: IFPLId
-    keys: FlightKeys
-
-
-class FlightPlanSummary(TypedDict, total=False):
-    id: FlightIdentificationOutput
-    status: FlightPlanStatus
-
-
-FlightPlanMessageStatus = Literal[
-    "INVALID", "REJECTED", "REFERRED", "DELETED", "DISCARD", "MULTIPLE"
-]
-
-FlightPlanMessageType = Literal[
-    "FPL",
-    "CHG",
-    "CNL",
-    "DLA",
-    "DEP",
-    "ARR",
-    "RQP",
-    "RQS",
-    "FNM",
-    "MFS",
-    "APL",
-    "ACH",
-    "AFP",
-]
-
-
-class InvalidFiling(TypedDict, total=False):
-    filingTime: common.DateTimeSecond
-    invalidMessageType: FlightPlanMessageType
-    invalidMessageStatus: FlightPlanMessageStatus
-    keys: FlightKeys
-
-
-class FlightPlanOrInvalidFiling(TypedDict, total=False):
-    lastValidFlightPlan: FlightPlanSummary
-    currentInvalid: InvalidFiling
-
-
-FlightTrend = Literal["CRUISE", "CLIMB", "DESCENT", "NONE"]
-
-
-class FlightPoint(TypedDict, total=False):
-    timeOver: common.DateTimeSecond
-    flightLevel: airspace.FlightLevel
-    entryTrend: FlightTrend
-    exitTrend: FlightTrend
-    associatedRouteOrTerminalProcedure: airspace.RouteOrTerminalProcedure
-    coveredDistance: common.DistanceNM
-    isVisible: Literal["true", "false"]
-    aerodrome: airspace.AerodromeICAOId
-    point: airspace.ICAOPoint
-    flightPlanPoint: Literal["true", "false"]
-
-
-AircraftTypeICAOId = str
-
-ProfileValidityKind = Literal["VIOLATIONS", "NO_VIOLATIONS", "UNKNOWN"]
-
-
-class ProfileValidity(TypedDict, total=False):
-    profileValidityKind: ProfileValidityKind
-    lastValidEOBT: common.DateTimeMinute
-
-
-FilingRule = Literal[
-    "NOT_AUTHORISED", "OPERATOR_MUST_REFILE", "FILING_ALLOWED_BY_AO_CFMU"
-]
-
-Longitude = str
-
-Latitude = str
-
-
-class Position(TypedDict, total=False):
-    latitude: Latitude
-    longitude: Longitude
-
-
-class FourDPosition(TypedDict, total=False):
-    timeOver: common.DateTimeSecond
-    position: Position
-    level: airspace.FlightLevel
-
-
-TurnFlightForLocationKind = Literal[
-    "NO_SHARP_TURN",
-    "CRITICAL_SHARP_TURN",
-    "INTERESTING_SHARP_TURN",
-    "UNINTERESTING_SHARP_TURN",
-    "CRITICAL_ELSEWHERE",
-    "INTERESTING_ELSEWHERE",
-    "UNINTERESTING_ELSEWHERE",
-    "CRITICAL_INSIDE",
-    "INTERESTING_INSIDE",
-    "UNINTERESTING_INSIDE",
-]
-
-
-class TurnFlightForLocation(TypedDict, total=False):
-    ftfmTurn: TurnFlightForLocationKind
-    locationModelTurnKind: TurnFlightForLocationKind
-
-
-class RevisionTimes(TypedDict, total=False):
-    timeToInsertInSequence: common.DurationHourMinute
-    timeToRemoveFromSequence: common.DurationHourMinute
-
-
-ACDMAlertSeverity = Literal["HIGH", "MEDIUM", "LOW"]
-
-ACDMAlertCode = str
-
-
-class ACDMAlertData(TypedDict, total=False):
-    alertCode: ACDMAlertCode
-    timestamp: common.DateTimeMinute
-    inconsistencyDetected: str
-    actionToTake: str
-    consequencesNote: str
-    severity: ACDMAlertSeverity
-
-
-class DepartureTolerance(TypedDict, total=False):
-    toleranceWindow: common.TimeHourMinutePeriod
-    extended: Literal["true", "false"]
-
-
-IntruderKind = Literal[
-    "NON_INTRUDER", "HORIZONTAL_INTRUDER", "VERTICAL_INTRUDER", "MIXED_INTRUDER"
-]
-
-
-class DeltaEntry(TypedDict, total=False):
-    intruderKind: IntruderKind
-    originOfIntruder: airspace.AirspaceId
-    deltaMinutes: str
-    deltaFlightLevel: str
-    deltaPosition: common.DistanceNM
-
-
 CfmuFlightType = Literal[
     "MFD", "IFPL", "ACT", "TACT_ACTIVATED", "TERMINATED", "PREDICTED_FLIGHT"
 ]
 
-FlightOperationalLogEntryType = Literal[
-    "UNDEFINED",
-    "INCOMING_MESSAGE",
-    "ERRONEOUS_INCOMING_MESSAGE",
-    "OUTGOING_MESSAGE",
-    "VIOLATION",
-    "HISTORY",
-    "WARNING",
-    "PROCESS_ERROR",
-    "ERROR_MESSAGE",
-    "ENVIRONMENT_MESSSAGE",
-    "USER_COMMAND",
-    "TEXT_MESSAGE",
+SuspensionStatus = Literal[
+    "NOT_SUSPENDED",
+    "SLOT_MISSED",
+    "REGULATION_CONFIRMATION",
+    "DELAY_CONFIRMATION",
+    "TRAFFIC_VOLUMES_CONDITION",
+    "NOT_REPORTED_AS_AIRBORNE",
+    "FLIGHT_PLAN_REVALIDATION",
+    "MANUAL_SUSPENSION",
+    "AIRPORT_SUSPENSION",
+    "V_MANUAL_SUSPENSION",
 ]
 
-
-class FlightOperationalLogEntry(TypedDict, total=False):
-    timestamp: common.DateTimeSecond
-    type: FlightOperationalLogEntryType
-    etfmsId: str
-    ifplId: IFPLId
-    issuer: str
-    message: str
-    summaryFields: str
-
+SSRCode = str
 
 YoYoFlightForLocationKind = Literal[
     "NO_YOYO",
@@ -383,33 +200,237 @@ class YoYoFlightForLocation(TypedDict, total=False):
     locationModelYoYoKind: YoYoFlightForLocationKind
 
 
+FilingRule = Literal[
+    "NOT_AUTHORISED", "OPERATOR_MUST_REFILE", "FILING_ALLOWED_BY_AO_CFMU"
+]
+
+
+class LoadStateAtReferenceLocation(TypedDict, total=False):
+    ENTRY: airspace.LoadState
+    OCCUPANCY: flow.OtmvStatus
+
+
+CTOTLimitReason = Literal[
+    "SLOT_TIME_NOT_LIMITED",
+    "FORCED_BY_TOWER",
+    "FORCED_BY_NMOC",
+    "WAS_FORCED_BY_NMOC",
+    "FORCED_BY_CHAMAN",
+    "FORCED_BY_STAM_MEASURE",
+    "LIMITED_BY_VIOLATION",
+    "LIMITED_BY_VIOLATION_THEN_ZERO_RATE_OR_RVR",
+    "SLOT_EXTENSION",
+]
+
+FlightTrend = Literal["CRUISE", "CLIMB", "DESCENT", "NONE"]
+
+
+class FlightPoint(TypedDict, total=False):
+    timeOver: common.DateTimeSecond
+    flightLevel: airspace.FlightLevel
+    entryTrend: FlightTrend
+    exitTrend: FlightTrend
+    associatedRouteOrTerminalProcedure: airspace.RouteOrTerminalProcedure
+    coveredDistance: common.DistanceNM
+    isVisible: Literal["true", "false"]
+    aerodrome: airspace.AerodromeICAOId
+    point: airspace.ICAOPoint
+    flightPlanPoint: Literal["true", "false"]
+
+
+class FlightAirspace(TypedDict, total=False):
+    airspaceId: airspace.AirspaceId
+    airspaceType: airspace.AirspaceType
+    firstEntryTime: common.DateTimeSecond
+    firstEntryFlightLevel: airspace.FlightLevel
+    lastExitFlightLevel: airspace.FlightLevel
+    firstEntryTrend: FlightTrend
+    middleTrend: FlightTrend
+    firstEntryDistance: common.DistanceNM
+    lastExitTime: common.DateTimeSecond
+    lastExitTrend: FlightTrend
+    lastExitDistance: common.DistanceNM
+    occupancyDuration: common.DurationHourMinuteSecond
+    occupancyDistance: common.DistanceNM
+    activated: Literal["true", "false"]
+
+
+FlightDataVersionNumber = str
+
+AircraftTypeICAOId = str
+
+
+class MessageOriginator(TypedDict, total=False):
+    airNavigationUnitId: common.AirNavigationUnitId
+    address: airspace.NetworkAddress
+
+
+WakeTurbulenceCategory = Literal["LIGHT", "MEDIUM", "HEAVY", "SUPER"]
+
+ReroutableStatus = Literal[
+    "CANNOT_BE_REROUTED", "TRY_ALLOWED", "TRY_AND_APPLY_ALLOWED"
+]
+
+ExtendedAircraftICAOId = str
+
+
+class FlightKeys(TypedDict, total=False):
+    aircraftId: ExtendedAircraftICAOId
+    aerodromeOfDeparture: airspace.AerodromeICAOId
+    nonICAOAerodromeOfDeparture: Literal["true", "false"]
+    airFiled: Literal["true", "false"]
+    aerodromeOfDestination: airspace.AerodromeICAOId
+    nonICAOAerodromeOfDestination: Literal["true", "false"]
+    estimatedOffBlockTime: common.DateTimeMinute
+
+
+IFPLId = str
+
+
+class FlightIdentificationOutput(TypedDict, total=False):
+    id: IFPLId
+    keys: FlightKeys
+
+
+ReroutingState = Literal[
+    "PRODUCED", "EXECUTED", "TIMED_OUT", "REJECTED", "REVOKED", "NO_MATCH"
+]
+
+ReroutingReason = Literal[
+    "ATFM_EXECUTED",
+    "AO",
+    "ATFCM_PURPOSE_PROPOSAL",
+    "ATC_PURPOSE_PROPOSAL",
+    "FLIGHT_EFFICIENCY_PURPOSE_PROPOSAL",
+    "STAM_PURPOSE_PROPOSAL",
+    "CDR_OPPORTUNITY_PROPOSAL",
+]
+
+
+class ReroutingIndicator(TypedDict, total=False):
+    rerouted: Literal["true", "false"]
+    reason: ReroutingReason
+    state: ReroutingState
+
+
+class TimeAndModel(TypedDict, total=False):
+    model: TrafficType
+    dateTime: common.DateTimeSecond
+
+
+class DepartureTolerance(TypedDict, total=False):
+    toleranceWindow: common.TimeHourMinutePeriod
+    extended: Literal["true", "false"]
+
+
+ReroutingFeedbackReason = Literal[
+    "TOTAL_COST",
+    "FUEL_SAVINGS",
+    "ROUTE_CHARGES",
+    "ATFM_DELAY_VALUE",
+    "DISTANCE",
+    "FLYING_TIME",
+    "OBT_VALIDITY",
+    "AO_INTERNAL_REASONS",
+    "OTHER",
+]
+
+ReroutingFeedbackKind = Literal["LIKE", "DISLIKE"]
+
+
+class ReroutingFeedback(TypedDict, total=False):
+    kind: ReroutingFeedbackKind
+    icaoRoute: str
+    reason: ReroutingFeedbackReason
+    comment: str
+    reroutingId: flow.ReroutingId
+
+
+FlightState = Literal[
+    "PLANNED",
+    "PLANNED_SLOT_ALLOCATED",
+    "PLANNED_REROUTED",
+    "PLANNED_SLOT_ALLOCATED_REROUTED",
+    "FILED",
+    "FILED_SLOT_ALLOCATED",
+    "FILED_SLOT_ISSUED",
+    "TACT_ACTIVATED",
+    "ATC_ACTIVATED",
+    "CANCELLED",
+    "TERMINATED",
+]
+
+ACDMAlertCode = str
+
+ACDMAlertSeverity = Literal["HIGH", "MEDIUM", "LOW"]
+
+
+class ACDMAlertData(TypedDict, total=False):
+    alertCode: ACDMAlertCode
+    timestamp: common.DateTimeMinute
+    inconsistencyDetected: str
+    actionToTake: str
+    consequencesNote: str
+    severity: ACDMAlertSeverity
+
+
+Latitude = str
+
+Longitude = str
+
+
+class Position(TypedDict, total=False):
+    latitude: Latitude
+    longitude: Longitude
+
+
+class FourDPosition(TypedDict, total=False):
+    timeOver: common.DateTimeSecond
+    position: Position
+    level: airspace.FlightLevel
+
+
+EntryExit = Literal["ENTRY", "EXIT"]
+
+
+class FlightRestriction(TypedDict, total=False):
+    timeOver: common.DateTimeSecond
+    coveredDistance: common.DistanceNM
+    flightPlanProcessing: airspace.FlightPlanProcessing
+    restrictionId: airspace.RestrictionId
+    event: EntryExit
+    position: common.Position
+    flightLevel: airspace.FlightLevel
+
+
+class RevisionTimes(TypedDict, total=False):
+    timeToInsertInSequence: common.DurationHourMinute
+    timeToRemoveFromSequence: common.DurationHourMinute
+
+
 class SlotSwapCounter(TypedDict, total=False):
     currentCounter: str
     maxLimit: str
 
 
-IntervalPosition = Literal["BEFORE", "INSIDE", "AFTER"]
+FAMStatus = Literal[
+    "AIRBORNE_WHEN_SUSPENDED_BY_FAM",
+    "AIRBORNE_WHEN_SHIFTED_BY_FAM",
+    "SUBJECT_TO_FAM",
+    "WAS_SUBJECT_TO_FAM",
+    "NOT_UNDER_FAM",
+    "SHIFTED_BY_FAM",
+    "WAS_SHIFTED_BY_FAM",
+    "SUSPENDED_BY_FAM",
+    "WAS_SUSPENDED_BY_FAM",
+]
 
 
-class ActualTimeAtTarget(TypedDict, total=False):
-    estimatedActualTimeAtTarget: common.DateTimeMinute
-    targetTimeCompliance: IntervalPosition
-
-
-class TargetTime(TypedDict, total=False):
-    regulationId: flow.RegulationId
-    targetTime: common.DateTimeSecond
-    targetLevel: airspace.FlightLevel
-    aerodromeICAOId: airspace.AerodromeICAOId
-    point: airspace.ICAOPoint
-    flightPlanPoint: Literal["true", "false"]
-    coveredDistance: common.DistanceNM
-    actualTimeAtTarget: ActualTimeAtTarget
-
-
-class APISubmissionRules(TypedDict, total=False):
-    latestSubmissionTargetTakeOffAPI: common.DateTimeMinute
-    earliestSubmissionTargetTimeOverAPI: common.DateTimeMinute
+class SlotSwapCandidate(TypedDict, total=False):
+    ifplId: IFPLId
+    subjectDeltaDelayMinutes: str
+    candidateDeltaDelayMinutes: str
+    swapDecideByTime: common.DateTimeMinute
 
 
 class RequestedFlightLevel(TypedDict, total=False):
@@ -418,29 +439,36 @@ class RequestedFlightLevel(TypedDict, total=False):
     relativeDistance: str
 
 
-CDMStatus = Literal[
-    "DEPARTING_FROM_STANDARD_AIRPORT",
-    "DEPARTING_FROM_CDM_AIRPORT",
-    "ESTIMATED",
-    "TARGETED",
-    "PRE_SEQUENCED",
-    "ACTUAL_OFFBLOCK",
-    "PREDICTED",
+FlightCriticalityKind = Literal[
+    "CRITICAL_DUE_TO_AIRPORT_CLOSURE",
+    "CRITICAL_DUE_TO_NOISE_ABATEMENT",
+    "CRITICAL_DUE_TO_CREW_TIME",
+    "CRITICAL_DUE_TO_PASSENGER_CONNECTIONS",
+    "CRITICAL_DUE_TO_TURNAROUND_CRITICAL",
+    "CRITICAL_DUE_TO_AIRFRAME_UTILISATION",
+    "CRITICAL_DUE_TO_PASSENGER_DELAY_COMPENSATION",
+    "CRITICAL_DUE_TO_OTHER_REASONS",
 ]
 
-DepartureAirportType = Literal["STANDARD", "ADVANCED_ATC_TWR", "CDM"]
+
+class FlightCriticalityIndicator(TypedDict, total=False):
+    kind: FlightCriticalityKind
+    comment: str
+
 
 AircraftICAOId = str
 
-OtherAircraftTypeDesignation_DataType = str
-
-
-class AircraftType(TypedDict, total=False):
-    icaoId: AircraftTypeICAOId
-    otherDesignation: OtherAircraftTypeDesignation_DataType
-
-
-DepartureStatus = Literal["OK", "DEICING"]
+ReasonForDPICancellation = Literal[
+    "NO_AIRPORT_SLOT",
+    "TOBT_UNKNOWN_OR_EXPIRED",
+    "TSAT_EXPIRED",
+    "RETURN_TO_STAND",
+    "FLIGHT_PLAN_INVALID",
+    "FLIGHT_CANCEL_IN_AODB",
+    "OTHER",
+    "UNDEFINED",
+    "UNDO_ADPI",
+]
 
 ATVFlightStatusOutbound = Literal[
     "SCH",
@@ -459,23 +487,21 @@ ATVFlightStatusOutbound = Literal[
     "TXD",
 ]
 
-TerminalOrApronStandName = str
-
-ReasonForDPICancellation = Literal[
-    "NO_AIRPORT_SLOT",
-    "TOBT_UNKNOWN_OR_EXPIRED",
-    "TSAT_EXPIRED",
-    "RETURN_TO_STAND",
-    "FLIGHT_PLAN_INVALID",
-    "FLIGHT_CANCEL_IN_AODB",
-    "OTHER",
-    "UNDEFINED",
-    "UNDO_ADPI",
-]
+DepartureStatus = Literal["OK", "DEICING"]
 
 AircraftRegistrationMark = str
 
+TerminalOrApronStandName = str
+
 AircraftTypeIATAId = str
+
+OtherAircraftTypeDesignation_DataType = str
+
+
+class AircraftType(TypedDict, total=False):
+    icaoId: AircraftTypeICAOId
+    otherDesignation: OtherAircraftTypeDesignation_DataType
+
 
 AircraftIATAId = str
 
@@ -508,30 +534,44 @@ class CDMInfo(TypedDict, total=False):
     iataFlightDesignatorDiscrepancy: Literal["true", "false"]
 
 
+DepartureAirportType = Literal["STANDARD", "ADVANCED_ATC_TWR", "CDM"]
+
+CDMStatus = Literal[
+    "DEPARTING_FROM_STANDARD_AIRPORT",
+    "DEPARTING_FROM_CDM_AIRPORT",
+    "ESTIMATED",
+    "TARGETED",
+    "PRE_SEQUENCED",
+    "ACTUAL_OFFBLOCK",
+    "PREDICTED",
+]
+
+
 class CDM(TypedDict, total=False):
     status: CDMStatus
     airportType: DepartureAirportType
     info: CDMInfo
 
 
-FAMStatus = Literal[
-    "AIRBORNE_WHEN_SUSPENDED_BY_FAM",
-    "AIRBORNE_WHEN_SHIFTED_BY_FAM",
-    "SUBJECT_TO_FAM",
-    "WAS_SUBJECT_TO_FAM",
-    "NOT_UNDER_FAM",
-    "SHIFTED_BY_FAM",
-    "WAS_SHIFTED_BY_FAM",
-    "SUSPENDED_BY_FAM",
-    "WAS_SUSPENDED_BY_FAM",
-]
+class ExclusionFromRegulations(TypedDict, total=False):
+    onTrafficVolume: Literal["true", "false"]
+    count: str
+    all: Literal["true", "false"]
+    hasBeenExcluded: Literal["true", "false"]
 
 
-class SlotSwapCandidate(TypedDict, total=False):
-    ifplId: IFPLId
-    subjectDeltaDelayMinutes: str
-    candidateDeltaDelayMinutes: str
-    swapDecideByTime: common.DateTimeMinute
+class FlightTrafficVolume(TypedDict, total=False):
+    trafficVolumeId: airspace.TrafficVolumeId
+    entryTime: common.DateTimeSecond
+    entryFlightLevel: airspace.FlightLevel
+    entryTrend: FlightTrend
+    middleTrend: FlightTrend
+    exitTime: common.DateTimeSecond
+    exitFlightLevel: airspace.FlightLevel
+    exitTrend: FlightTrend
+    activated: Literal["true", "false"]
+    exempted: Literal["true", "false"]
+    flows: Union[flow.Flow, list[flow.Flow]]
 
 
 FlightEventType = Literal[
@@ -624,20 +664,6 @@ FlightEventType = Literal[
     "UFC",
 ]
 
-FlightState = Literal[
-    "PLANNED",
-    "PLANNED_SLOT_ALLOCATED",
-    "PLANNED_REROUTED",
-    "PLANNED_SLOT_ALLOCATED_REROUTED",
-    "FILED",
-    "FILED_SLOT_ALLOCATED",
-    "FILED_SLOT_ISSUED",
-    "TACT_ACTIVATED",
-    "ATC_ACTIVATED",
-    "CANCELLED",
-    "TERMINATED",
-]
-
 
 class FlightEvent(TypedDict, total=False):
     timestamp: common.DateTimeSecond
@@ -648,9 +674,23 @@ class FlightEvent(TypedDict, total=False):
     fumSent: Literal["true", "false"]
 
 
-class LoadStateAtReferenceLocation(TypedDict, total=False):
-    ENTRY: airspace.LoadState
-    OCCUPANCY: flow.OtmvStatus
+TurnFlightForLocationKind = Literal[
+    "NO_SHARP_TURN",
+    "CRITICAL_SHARP_TURN",
+    "INTERESTING_SHARP_TURN",
+    "UNINTERESTING_SHARP_TURN",
+    "CRITICAL_ELSEWHERE",
+    "INTERESTING_ELSEWHERE",
+    "UNINTERESTING_ELSEWHERE",
+    "CRITICAL_INSIDE",
+    "INTERESTING_INSIDE",
+    "UNINTERESTING_INSIDE",
+]
+
+
+class TurnFlightForLocation(TypedDict, total=False):
+    ftfmTurn: TurnFlightForLocationKind
+    locationModelTurnKind: TurnFlightForLocationKind
 
 
 EquipmentStatus = Literal["EQUIPPED", "NOT_EQUIPPED"]
@@ -701,14 +741,60 @@ class EquipmentCapabilityAndStatus(TypedDict, total=False):
     other: EquipmentStatus
 
 
-DelayCharacteristics = Literal[
-    "EXCEEDS_DELAY_CONFIRMATION", "ADJUSTED_TO_CLOCK"
+ProfileValidityKind = Literal["VIOLATIONS", "NO_VIOLATIONS", "UNKNOWN"]
+
+
+class ProfileValidity(TypedDict, total=False):
+    profileValidityKind: ProfileValidityKind
+    lastValidEOBT: common.DateTimeMinute
+
+
+class ReadyStatus(TypedDict, total=False):
+    readyForImprovement: Literal["true", "false"]
+    readyToDepart: Literal["true", "false"]
+    revisedTaxiTime: common.DurationHourMinute
+
+
+class APISubmissionRules(TypedDict, total=False):
+    latestSubmissionTargetTakeOffAPI: common.DateTimeMinute
+    earliestSubmissionTargetTimeOverAPI: common.DateTimeMinute
+
+
+FlightVisibility = Literal[
+    "NO_VISIBILITY",
+    "VISIBLE",
+    "INVISIBLE",
+    "INVISIBLE_BEFORE_VISIBLE",
+    "VISIBLE_AFTER_INVISIBLE",
+    "VISIBLE_BEFORE_INVISIBLE",
+    "VISIBLE_BETWEEN_INVISIBLE",
+    "VISIBLE_WITH_SKIPOUT",
+]
+
+FlightOperationalLogEntryType = Literal[
+    "UNDEFINED",
+    "INCOMING_MESSAGE",
+    "ERRONEOUS_INCOMING_MESSAGE",
+    "OUTGOING_MESSAGE",
+    "VIOLATION",
+    "HISTORY",
+    "WARNING",
+    "PROCESS_ERROR",
+    "ERROR_MESSAGE",
+    "ENVIRONMENT_MESSSAGE",
+    "USER_COMMAND",
+    "TEXT_MESSAGE",
 ]
 
 
-class TimeAndModel(TypedDict, total=False):
-    model: TrafficType
-    dateTime: common.DateTimeSecond
+class FlightOperationalLogEntry(TypedDict, total=False):
+    timestamp: common.DateTimeSecond
+    type: FlightOperationalLogEntryType
+    etfmsId: str
+    ifplId: IFPLId
+    issuer: str
+    message: str
+    summaryFields: str
 
 
 ProposalKind = Literal["SIP", "RVR", "RRP", "STAM_SLOT", "DELAY_CONF"]
@@ -740,23 +826,6 @@ class ProposalInformation(TypedDict, total=False):
     deltaDelay: common.SignedDurationHourMinuteSecond
     reroutingId: flow.ReroutingId
 
-
-class MessageOriginator(TypedDict, total=False):
-    airNavigationUnitId: common.AirNavigationUnitId
-    address: airspace.NetworkAddress
-
-
-CTOTLimitReason = Literal[
-    "SLOT_TIME_NOT_LIMITED",
-    "FORCED_BY_TOWER",
-    "FORCED_BY_NMOC",
-    "WAS_FORCED_BY_NMOC",
-    "FORCED_BY_CHAMAN",
-    "FORCED_BY_STAM_MEASURE",
-    "LIMITED_BY_VIOLATION",
-    "LIMITED_BY_VIOLATION_THEN_ZERO_RATE_OR_RVR",
-    "SLOT_EXTENSION",
-]
 
 ATVFlightStatusInbound = Literal[
     "AIR",
@@ -807,29 +876,37 @@ class ArrivalInformation(TypedDict, total=False):
     estimatedOrActualTimeOver: common.DateTimeMinute
 
 
-class FlightTrafficVolume(TypedDict, total=False):
-    trafficVolumeId: airspace.TrafficVolumeId
-    entryTime: common.DateTimeSecond
-    entryFlightLevel: airspace.FlightLevel
-    entryTrend: FlightTrend
-    middleTrend: FlightTrend
-    exitTime: common.DateTimeSecond
-    exitFlightLevel: airspace.FlightLevel
-    exitTrend: FlightTrend
-    activated: Literal["true", "false"]
-    exempted: Literal["true", "false"]
-    flows: Union[flow.Flow, list[flow.Flow]]
+DelayCharacteristics = Literal[
+    "EXCEEDS_DELAY_CONFIRMATION", "ADJUSTED_TO_CLOCK"
+]
+
+IntervalPosition = Literal["BEFORE", "INSIDE", "AFTER"]
 
 
-AircraftIdDataSource = Literal["DDR", "API", "DPI", "FPM"]
+class ActualTimeAtTarget(TypedDict, total=False):
+    estimatedActualTimeAtTarget: common.DateTimeMinute
+    targetTimeCompliance: IntervalPosition
 
 
-class AircraftIATAIdFromDataSource(TypedDict, total=False):
-    id: AircraftIATAId
-    dataSource: AircraftIdDataSource
+class TargetTime(TypedDict, total=False):
+    regulationId: flow.RegulationId
+    targetTime: common.DateTimeSecond
+    targetLevel: airspace.FlightLevel
+    aerodromeICAOId: airspace.AerodromeICAOId
+    point: airspace.ICAOPoint
+    flightPlanPoint: Literal["true", "false"]
+    coveredDistance: common.DistanceNM
+    actualTimeAtTarget: ActualTimeAtTarget
 
 
-SSRCode = str
+TaxiTimeSource = Literal["ENV", "FPL", "RWY", "REA", "CDM"]
+
+
+class TaxiTimeAndProcedure(TypedDict, total=False):
+    taxiTime: common.DurationHourMinute
+    taxiTimeSource: TaxiTimeSource
+    terminalProcedure: airspace.TerminalProcedure
+
 
 ATFMMessageType = Literal[
     "DES",
@@ -854,157 +931,32 @@ ATFMMessageType = Literal[
 ]
 
 
-class ExclusionFromRegulations(TypedDict, total=False):
-    onTrafficVolume: Literal["true", "false"]
-    count: str
-    all: Literal["true", "false"]
-    hasBeenExcluded: Literal["true", "false"]
-
-
-EntryExit = Literal["ENTRY", "EXIT"]
-
-
-class FlightRestriction(TypedDict, total=False):
-    timeOver: common.DateTimeSecond
-    coveredDistance: common.DistanceNM
-    flightPlanProcessing: airspace.FlightPlanProcessing
-    restrictionId: airspace.RestrictionId
-    event: EntryExit
-    position: common.Position
-    flightLevel: airspace.FlightLevel
-
-
-class ReadyStatus(TypedDict, total=False):
-    readyForImprovement: Literal["true", "false"]
-    readyToDepart: Literal["true", "false"]
-    revisedTaxiTime: common.DurationHourMinute
-
-
 class SlotZone(TypedDict, total=False):
     beforeCTO: common.DurationMinute
     afterCTO: common.DurationMinute
 
 
-ReroutableStatus = Literal[
-    "CANNOT_BE_REROUTED", "TRY_ALLOWED", "TRY_AND_APPLY_ALLOWED"
-]
+AircraftIdDataSource = Literal["DDR", "API", "DPI", "FPM"]
+
+
+class AircraftIATAIdFromDataSource(TypedDict, total=False):
+    id: AircraftIATAId
+    dataSource: AircraftIdDataSource
+
 
 ICAOAircraftAddress = str
 
-
-class FlightAirspace(TypedDict, total=False):
-    airspaceId: airspace.AirspaceId
-    airspaceType: airspace.AirspaceType
-    firstEntryTime: common.DateTimeSecond
-    firstEntryFlightLevel: airspace.FlightLevel
-    lastExitFlightLevel: airspace.FlightLevel
-    firstEntryTrend: FlightTrend
-    middleTrend: FlightTrend
-    firstEntryDistance: common.DistanceNM
-    lastExitTime: common.DateTimeSecond
-    lastExitTrend: FlightTrend
-    lastExitDistance: common.DistanceNM
-    occupancyDuration: common.DurationHourMinuteSecond
-    occupancyDistance: common.DistanceNM
-    activated: Literal["true", "false"]
-
-
-FlightCriticalityKind = Literal[
-    "CRITICAL_DUE_TO_AIRPORT_CLOSURE",
-    "CRITICAL_DUE_TO_NOISE_ABATEMENT",
-    "CRITICAL_DUE_TO_CREW_TIME",
-    "CRITICAL_DUE_TO_PASSENGER_CONNECTIONS",
-    "CRITICAL_DUE_TO_TURNAROUND_CRITICAL",
-    "CRITICAL_DUE_TO_AIRFRAME_UTILISATION",
-    "CRITICAL_DUE_TO_PASSENGER_DELAY_COMPENSATION",
-    "CRITICAL_DUE_TO_OTHER_REASONS",
+IntruderKind = Literal[
+    "NON_INTRUDER", "HORIZONTAL_INTRUDER", "VERTICAL_INTRUDER", "MIXED_INTRUDER"
 ]
 
 
-class FlightCriticalityIndicator(TypedDict, total=False):
-    kind: FlightCriticalityKind
-    comment: str
-
-
-TaxiTimeSource = Literal["ENV", "FPL", "RWY", "REA", "CDM"]
-
-
-class TaxiTimeAndProcedure(TypedDict, total=False):
-    taxiTime: common.DurationHourMinute
-    taxiTimeSource: TaxiTimeSource
-    terminalProcedure: airspace.TerminalProcedure
-
-
-SuspensionStatus = Literal[
-    "NOT_SUSPENDED",
-    "SLOT_MISSED",
-    "REGULATION_CONFIRMATION",
-    "DELAY_CONFIRMATION",
-    "TRAFFIC_VOLUMES_CONDITION",
-    "NOT_REPORTED_AS_AIRBORNE",
-    "FLIGHT_PLAN_REVALIDATION",
-    "MANUAL_SUSPENSION",
-    "AIRPORT_SUSPENSION",
-    "V_MANUAL_SUSPENSION",
-]
-
-FlightVisibility = Literal[
-    "NO_VISIBILITY",
-    "VISIBLE",
-    "INVISIBLE",
-    "INVISIBLE_BEFORE_VISIBLE",
-    "VISIBLE_AFTER_INVISIBLE",
-    "VISIBLE_BEFORE_INVISIBLE",
-    "VISIBLE_BETWEEN_INVISIBLE",
-    "VISIBLE_WITH_SKIPOUT",
-]
-
-WakeTurbulenceCategory = Literal["LIGHT", "MEDIUM", "HEAVY", "SUPER"]
-
-ReroutingFeedbackKind = Literal["LIKE", "DISLIKE"]
-
-ReroutingFeedbackReason = Literal[
-    "TOTAL_COST",
-    "FUEL_SAVINGS",
-    "ROUTE_CHARGES",
-    "ATFM_DELAY_VALUE",
-    "DISTANCE",
-    "FLYING_TIME",
-    "OBT_VALIDITY",
-    "AO_INTERNAL_REASONS",
-    "OTHER",
-]
-
-
-class ReroutingFeedback(TypedDict, total=False):
-    kind: ReroutingFeedbackKind
-    icaoRoute: str
-    reason: ReroutingFeedbackReason
-    comment: str
-    reroutingId: flow.ReroutingId
-
-
-FlightDataVersionNumber = str
-
-ReroutingState = Literal[
-    "PRODUCED", "EXECUTED", "TIMED_OUT", "REJECTED", "REVOKED", "NO_MATCH"
-]
-
-ReroutingReason = Literal[
-    "ATFM_EXECUTED",
-    "AO",
-    "ATFCM_PURPOSE_PROPOSAL",
-    "ATC_PURPOSE_PROPOSAL",
-    "FLIGHT_EFFICIENCY_PURPOSE_PROPOSAL",
-    "STAM_PURPOSE_PROPOSAL",
-    "CDR_OPPORTUNITY_PROPOSAL",
-]
-
-
-class ReroutingIndicator(TypedDict, total=False):
-    rerouted: Literal["true", "false"]
-    reason: ReroutingReason
-    state: ReroutingState
+class DeltaEntry(TypedDict, total=False):
+    intruderKind: IntruderKind
+    originOfIntruder: airspace.AirspaceId
+    deltaMinutes: str
+    deltaFlightLevel: str
+    deltaPosition: common.DistanceNM
 
 
 class Flight(TypedDict, total=False):
@@ -1155,6 +1107,56 @@ class Flight(TypedDict, total=False):
     aoReroutingFeedbacks: Union[ReroutingFeedback, list[ReroutingFeedback]]
 
 
+FlightPlanMessageStatus = Literal[
+    "INVALID", "REJECTED", "REFERRED", "DELETED", "DISCARD", "MULTIPLE"
+]
+
+FlightPlanMessageType = Literal[
+    "FPL",
+    "CHG",
+    "CNL",
+    "DLA",
+    "DEP",
+    "ARR",
+    "RQP",
+    "RQS",
+    "FNM",
+    "MFS",
+    "APL",
+    "ACH",
+    "AFP",
+]
+
+
+class InvalidFiling(TypedDict, total=False):
+    filingTime: common.DateTimeSecond
+    invalidMessageType: FlightPlanMessageType
+    invalidMessageStatus: FlightPlanMessageStatus
+    keys: FlightKeys
+
+
+FlightPlanStatus = Literal[
+    "FILED",
+    "AIRBORNE",
+    "SUSPENDED",
+    "CLOSED",
+    "BACKUP",
+    "TACT_DELETED",
+    "TERMINATED",
+    "OFFBLOCKS",
+]
+
+
+class FlightPlanSummary(TypedDict, total=False):
+    id: FlightIdentificationOutput
+    status: FlightPlanStatus
+
+
+class FlightPlanOrInvalidFiling(TypedDict, total=False):
+    lastValidFlightPlan: FlightPlanSummary
+    currentInvalid: InvalidFiling
+
+
 class FlightOrFlightPlan(TypedDict, total=False):
     flight: Flight
     flightPlan: FlightPlanOrInvalidFiling
@@ -1168,8 +1170,7 @@ class FlightListByLocationReplyData(FlightListReplyData):
     effectiveTrafficWindow: common.DateTimeMinutePeriod
 
 
-class FlightListByAerodromeReplyData(FlightListByLocationReplyData):
-    ...
+class FlightListByAerodromeReplyData(FlightListByLocationReplyData): ...
 
 
 class FlightListByAerodromeReply(common.Reply):
@@ -1181,8 +1182,7 @@ class FlightListByAirspaceRequest(FlightListByLocationRequest):
     airspace: airspace.AirspaceId
 
 
-class FlightListByAirspaceReplyData(FlightListByLocationReplyData):
-    ...
+class FlightListByAirspaceReplyData(FlightListByLocationReplyData): ...
 
 
 class FlightListByAirspaceReply(common.Reply):
@@ -1199,8 +1199,7 @@ class FlightListByMeasureRequest(FlightListByLocationRequest):
     mode: FlightListByMeasureMode
 
 
-class FlightListByMeasureReplyData(FlightListByLocationReplyData):
-    ...
+class FlightListByMeasureReplyData(FlightListByLocationReplyData): ...
 
 
 class FlightListByMeasureReply(common.Reply):
@@ -1225,6 +1224,9 @@ class FlightPlanListReply(common.Reply):
     data: FlightPlanListReplyData
 
 
+FlightDataset = Literal["flightPlan", "flightPlanHistory", "flight"]
+
+
 class IATAFlightKeys(TypedDict, total=False):
     flightDesignator: AircraftIATAId
     estimatedOffBlockTime: common.DateTimeMinute
@@ -1236,9 +1238,6 @@ class FlightIdentificationInput(TypedDict, total=False):
     iataKeys: IATAFlightKeys
 
 
-FlightDataset = Literal["flightPlan", "flightPlanHistory", "flight"]
-
-
 class FlightRetrievalRequest(common.Request):
     dataset: common.Dataset
     includeProposalFlights: Literal["true", "false"]
@@ -1247,12 +1246,15 @@ class FlightRetrievalRequest(common.Request):
     requestedFlightFields: Union[FlightField, list[FlightField]]
 
 
-class EnrouteDelay(TypedDict, total=False):
-    delay: common.DurationHourMinute
-    point: airspace.ICAOPoint
+FlightRules = Literal["VFR_THEN_IFR", "IFR_THEN_VFR", "VFR", "IFR"]
+
+AlternateAerodrome_DataType = str
 
 
-AirportSlot = str
+class FlightPlanOriginator(TypedDict, total=False):
+    address: str
+    phone: str
+    otherInformation: str
 
 
 class EstimatedElapsedTimeAtLocation(TypedDict, total=False):
@@ -1261,12 +1263,6 @@ class EstimatedElapsedTimeAtLocation(TypedDict, total=False):
     point: airspace.ICAOPoint
     latitude: common.Latitude
     longitude: common.Longitude
-
-
-class FlightPlanOriginator(TypedDict, total=False):
-    address: str
-    phone: str
-    otherInformation: str
 
 
 SSRMode = Literal["A"]
@@ -1282,6 +1278,43 @@ class AircraftIdentification(TypedDict, total=False):
     registrationMark: AircraftRegistrationMark
     aircraftAddress: ICAOAircraftAddress
     ssrInfo: SSRInfo
+
+
+AerodromeName_DataType = str
+
+
+class OtherAerodromeDesignation(TypedDict, total=False):
+    aerodromeName: AerodromeName_DataType
+    aerodromeLocation: airspace.NonPublishedPoint
+    firstLastRoutePoint: airspace.ICAOPoint
+
+
+class Aerodrome(TypedDict, total=False):
+    icaoId: airspace.AerodromeICAOId
+    otherDesignation: OtherAerodromeDesignation
+
+
+AerodromeNameLocationDescription_DataType = str
+
+
+class AlternateAerodrome(TypedDict, total=False):
+    icaoId: airspace.AerodromeICAOId
+    nameLocationDescription: AerodromeNameLocationDescription_DataType
+
+
+class AerodromesOfDestination(TypedDict, total=False):
+    aerodromeOfDestination: Aerodrome
+    alternate1: AlternateAerodrome
+    alternate2: AlternateAerodrome
+
+
+StayInformation_DataType = str
+
+FlightType = Literal[
+    "SCHEDULED", "NOT_SCHEDULED", "GENERAL", "MILITARY", "OTHER"
+]
+
+AirportSlot = str
 
 
 class ModeSCapabilities(TypedDict, total=False):
@@ -1306,70 +1339,22 @@ class SurveillanceEquipment(TypedDict, total=False):
     adscAtn: EquipmentStatus
 
 
-AerodromeName_DataType = str
+AtsUnitId_DataType = str
 
 
-class OtherAerodromeDesignation(TypedDict, total=False):
-    aerodromeName: AerodromeName_DataType
-    aerodromeLocation: airspace.NonPublishedPoint
-    firstLastRoutePoint: airspace.ICAOPoint
+class AirFiledData(TypedDict, total=False):
+    atsUnitId: AtsUnitId_DataType
+    startingPoint: airspace.ICAOPoint
+    clearedLevel: airspace.FlightLevel
+    estimatedTimeOver: common.DateTimeSecond
 
 
-class Aerodrome(TypedDict, total=False):
-    icaoId: airspace.AerodromeICAOId
-    otherDesignation: OtherAerodromeDesignation
+class ReclearanceInFlight(TypedDict, total=False):
+    icaoRoute: str
+    aerodrome: airspace.AerodromeICAOId
 
 
-LifeJacketEquipment = Literal["LIGHTS", "FLUORESCEIN", "UHF", "VHF"]
-
-FrequencyOnAircraft = Literal["UHF", "VHF", "ELT"]
-
-TotalCapacity_DataType = str
-
-NumberOfDinghies_DataType = str
-
-
-class Dinghies(TypedDict, total=False):
-    numberOfDinghies: NumberOfDinghies_DataType
-    totalCapacity: TotalCapacity_DataType
-    areCovered: Literal["true", "false"]
-    colours: common.Colours
-
-
-SurvivalEquipment = Literal["POLAR", "DESERT", "MARITIME", "JUNGLE"]
-
-
-class SupplementaryInformation(TypedDict, total=False):
-    fuelEndurance: common.DurationHourMinute
-    numberOfPersons: str
-    frequencyAvailability: Union[FrequencyOnAircraft, list[FrequencyOnAircraft]]
-    survivalEquipment: Union[SurvivalEquipment, list[SurvivalEquipment]]
-    otherSurvivalEquipment: str
-    lifeJacketEquipment: Union[LifeJacketEquipment, list[LifeJacketEquipment]]
-    dinghiesInformation: Dinghies
-    aircraftColourAndMarkings: str
-    pilotInCommand: str
-
-
-AlternateAerodrome_DataType = str
-
-FlightType = Literal[
-    "SCHEDULED", "NOT_SCHEDULED", "GENERAL", "MILITARY", "OTHER"
-]
-
-AerodromeNameLocationDescription_DataType = str
-
-
-class AlternateAerodrome(TypedDict, total=False):
-    icaoId: airspace.AerodromeICAOId
-    nameLocationDescription: AerodromeNameLocationDescription_DataType
-
-
-class AerodromesOfDestination(TypedDict, total=False):
-    aerodromeOfDestination: Aerodrome
-    alternate1: AlternateAerodrome
-    alternate2: AlternateAerodrome
-
+SelectiveCallingCode = str
 
 PerformanceBasedNavigationCode = Literal[
     "RNAV_10",
@@ -1398,6 +1383,14 @@ PerformanceBasedNavigationCode = Literal[
     "RNP_AR_APCH_NO_RF",
 ]
 
+AircraftPerformanceCategory = Literal[
+    "CAT_A", "CAT_B", "CAT_C", "CAT_D", "CAT_E", "CAT_H"
+]
+
+AircraftOperatorName_DataType = str
+
+EURSTSIndicator = Literal["EXM833", "PROTECTED", "RNAVX", "RNAVINOP", "CPDLCX"]
+
 ICAOSTSIndicator = Literal[
     "ALTRV",
     "ATFMX",
@@ -1414,8 +1407,6 @@ ICAOSTSIndicator = Literal[
     "STATE",
 ]
 
-EURSTSIndicator = Literal["EXM833", "PROTECTED", "RNAVX", "RNAVINOP", "CPDLCX"]
-
 
 class SpecialHandlingIndicators(TypedDict, total=False):
     icaoSTSIndicators: Union[ICAOSTSIndicator, list[ICAOSTSIndicator]]
@@ -1427,21 +1418,6 @@ DataLinkCapabilities_DataType = str
 
 class DatalinkCapabilities(TypedDict, total=False):
     value: DataLinkCapabilities_DataType
-
-
-AircraftOperatorName_DataType = str
-
-AircraftPerformanceCategory = Literal[
-    "CAT_A", "CAT_B", "CAT_C", "CAT_D", "CAT_E", "CAT_H"
-]
-
-
-class ReclearanceInFlight(TypedDict, total=False):
-    icaoRoute: str
-    aerodrome: airspace.AerodromeICAOId
-
-
-SelectiveCallingCode = str
 
 
 class OtherInformation(TypedDict, total=False):
@@ -1462,19 +1438,40 @@ class OtherInformation(TypedDict, total=False):
     otherRemarks: str
 
 
-StayInformation_DataType = str
+SurvivalEquipment = Literal["POLAR", "DESERT", "MARITIME", "JUNGLE"]
 
-AtsUnitId_DataType = str
+FrequencyOnAircraft = Literal["UHF", "VHF", "ELT"]
 
+TotalCapacity_DataType = str
 
-class AirFiledData(TypedDict, total=False):
-    atsUnitId: AtsUnitId_DataType
-    startingPoint: airspace.ICAOPoint
-    clearedLevel: airspace.FlightLevel
-    estimatedTimeOver: common.DateTimeSecond
+NumberOfDinghies_DataType = str
 
 
-FlightRules = Literal["VFR_THEN_IFR", "IFR_THEN_VFR", "VFR", "IFR"]
+class Dinghies(TypedDict, total=False):
+    numberOfDinghies: NumberOfDinghies_DataType
+    totalCapacity: TotalCapacity_DataType
+    areCovered: Literal["true", "false"]
+    colours: common.Colours
+
+
+LifeJacketEquipment = Literal["LIGHTS", "FLUORESCEIN", "UHF", "VHF"]
+
+
+class SupplementaryInformation(TypedDict, total=False):
+    fuelEndurance: common.DurationHourMinute
+    numberOfPersons: str
+    frequencyAvailability: Union[FrequencyOnAircraft, list[FrequencyOnAircraft]]
+    survivalEquipment: Union[SurvivalEquipment, list[SurvivalEquipment]]
+    otherSurvivalEquipment: str
+    lifeJacketEquipment: Union[LifeJacketEquipment, list[LifeJacketEquipment]]
+    dinghiesInformation: Dinghies
+    aircraftColourAndMarkings: str
+    pilotInCommand: str
+
+
+class EnrouteDelay(TypedDict, total=False):
+    delay: common.DurationHourMinute
+    point: airspace.ICAOPoint
 
 
 class FlightPlan(TypedDict, total=False):

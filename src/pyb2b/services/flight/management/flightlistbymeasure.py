@@ -38,18 +38,20 @@ default_fields: list[FlightField] = [
 ]
 
 
-class FlightListByMeasure(DataFrameMixin, JSONMixin[FlightListByMeasureReply]):
-    ...
+class FlightListByMeasure(
+    DataFrameMixin, JSONMixin[FlightListByMeasureReply]
+): ...
 
 
 class _FlightListByMeasure:
     def flightlistbymeasure(
         self,
+        start: None | str | pd.Timestamp = None,
+        stop: None | str | pd.Timestamp = None,
+        *,
         regulation: None | RegulationId = None,
         rerouting: None | ReroutingId = None,
         mode: FlightListByMeasureMode = "CONCERNED_BY_MEASURE",
-        start: None | str | pd.Timestamp = None,
-        stop: None | str | pd.Timestamp = None,
         include_proposal: bool = False,
         include_forecast: bool = True,
         fields: list[FlightField] = default_fields,

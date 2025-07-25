@@ -83,7 +83,10 @@ class B2B(
             pkcs12_password.encode(),
         )
 
-    def raise_xml_errors(self, res: httpx.Response) -> None:
+    def raise_xml_errors(
+        self, data: dict[str, Any], res: httpx.Response
+    ) -> None:
+        print("Request", xmltodict.unparse(data))
         try:
             tree = ElementTree.fromstring(res.content)
         except ElementTree.ParseError:
@@ -136,7 +139,7 @@ class B2B(
             verify=self.context,
         )
         res.raise_for_status()
-        self.raise_xml_errors(res)
+        self.raise_xml_errors(data, res)
         return xmltodict.parse(res.content)  # type: ignore
 
     async def async_post(
@@ -152,5 +155,5 @@ class B2B(
         )
         res = await client.send(request)
         res.raise_for_status()
-        self.raise_xml_errors(res)
+        self.raise_xml_errors(data, res)
         return xmltodict.parse(res.content)  # type: ignore

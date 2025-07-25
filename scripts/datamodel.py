@@ -221,7 +221,7 @@ class Package:
             return self.process_enum(entry)
         if is_primitive(entry):
             return self.process_primitive(entry)
-        raise ValueError(f'Unsupported {entry["@xmi:type"]}')
+        raise ValueError(f"Unsupported {entry['@xmi:type']}")
 
     def find_by_name(self, name: str) -> None | Description:
         for packages in self.packages.values():
@@ -277,11 +277,14 @@ items = process(
     "ID_eurocontrol.cfmu.cua.b2b.flight.FlightPlanListReply",
     "ID_eurocontrol.cfmu.cua.b2b.flight.FlightRetrievalRequest",
     "ID_eurocontrol.cfmu.cua.b2b.flight.FlightRetrievalReply",
+    "ID_eurocontrol.cfmu.cua.b2b.flow.RegulationListRequest",
+    "ID_eurocontrol.cfmu.cua.b2b.flow.RegulationListReply",
 )
 
 # %%
+import functools
 from itertools import groupby
-from operator import itemgetter
+from operator import iadd, itemgetter
 
 output = Path(".") / "src" / "pyb2b" / "types" / "generated"
 output.mkdir(parents=True, exist_ok=True)
@@ -294,7 +297,8 @@ for package, elts in groupby(
     file_ = output / f"{package}.py"
     content = "from typing import Literal, TypedDict, Union\n"
     elts_list = list(elts)
-    list_dep_pkg = sum(
+    list_dep_pkg: list[str] = functools.reduce(
+        iadd,
         (
             (
                 list(k.split(".")[-2] for k in elt["dependencies"])

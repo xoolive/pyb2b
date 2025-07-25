@@ -33,6 +33,7 @@ from pyb2b.services.flight.management import (
     FlightPlanList,
     FlightRetrieval,
 )
+from pyb2b.services.flow.measures import RegulationList
 from pyb2b.types.generated.flight import (
     FlightOrFlightPlan,
     FlightPlanOrInvalidFiling,
@@ -116,6 +117,7 @@ class Flight(VerticalScroll):
                 yield Static(id="CTOA")
                 yield Static(id="ATOA")
         yield Static(id="icaoRoute")
+        yield VerticalScroll(Static(id="regulation"), id="regulation-container")
 
     def action_save(self) -> None:
         if self.flight is None:
@@ -134,7 +136,11 @@ class Flight(VerticalScroll):
         self.notify(f"File saved: {filename}", severity="information")
         self.flight.to_file(filename)
 
-    def update_flight(self, flight_retrieval: FlightRetrieval) -> None:
+    def update_flight(
+        self,
+        flight_retrieval: FlightRetrieval,
+        regulation: None | RegulationList,
+    ) -> None:
         self.flight = flight_retrieval
         data = self.flight.json["data"]
         if data is None:
@@ -199,6 +205,10 @@ class Flight(VerticalScroll):
         self.query_one("#iata", Static).update(
             f"{iata if isinstance(iata, set) else iata.get('id', '')}"
         )
+        if regulation is not None:
+            self.query_one("#regulation", Static).update(
+                JSON(json.dumps(regulation.json["data"]["regulations"]))
+            )
 
         self.focus()  # helps activating the Binding
 
@@ -270,7 +280,7 @@ class B2B(App[None]):
             origin=line_info["from"],
             destination=line_info["to"],
         )
-        self.update_flight(result)
+        await self.update_flight(result)
         self.query_one("#results", Static).update(JSON(json.dumps(result.json)))
 
     @on(Input.Submitted)
@@ -337,14 +347,28 @@ class B2B(App[None]):
             JSON(json.dumps(results.json))
         )
 
-    def update_flight(self, flight: FlightRetrieval) -> None:
+    async def update_flight(self, flight: FlightRetrieval) -> None:
         self.query_one(Tabs).remove_class("hidden")
         tabbed_content = self.query_one(TabbedContent)
         tabbed_content.show_tab("flight-pane")
         tabbed_content.active = "flight-pane"
 
         flight_content = self.query_one(Flight)
-        flight_content.update_flight(flight)
+        regulation = None
+        if regulation_id := flight.json["data"]["flight"].get(
+            "mostPenalisingRegulation", None
+        ):
+            regulation = await b2b.async_regulationlist(
+                self.client,
+                start=flight.json["data"]["flight"].get(
+                    "estimatedTakeOffTime", None
+                ),
+                stop=flight.json["data"]["flight"].get(
+                    "estimatedTimeOfArrival", None
+                ),
+                regulations=regulation_id,
+            )
+        flight_content.update_flight(flight, regulation)
 
     def update_with_flightlist(
         self,

@@ -20,11 +20,10 @@ class CompleteAIXMDatasetRequest(common.Request):
     queryCriteria: CompleteDatasetQueryCriteria
 
 
+class AIXMFile(common.File): ...
+
+
 AirspaceDataUpdateId = str
-
-
-class AIXMFile(common.File):
-    ...
 
 
 class CompleteDatasetSummary(TypedDict, total=False):
@@ -46,11 +45,26 @@ class CompleteAIXMDatasetReply(common.Reply):
 
 AerodromeICAOId = str
 
+LoadState = Literal[
+    "NORMAL", "LOW_THRESHOLD", "HIGH_THRESHOLD", "OVERLOAD", "UNDEFINED"
+]
+
+FlightLevelUnit = Literal["F", "A", "S", "M", "SM", "MM"]
+
+FlightLevel_DataType = str
+
+
+class FlightLevel(TypedDict, total=False):
+    unit: FlightLevelUnit
+    level: FlightLevel_DataType
+    ground: Literal["true", "false"]
+    ceiling: Literal["true", "false"]
+
+
 PublishedPointId = str
 
 
-class NonPublishedPoint(TypedDict, total=False):
-    ...
+class NonPublishedPoint(TypedDict, total=False): ...
 
 
 class ICAOPoint(TypedDict, total=False):
@@ -75,16 +89,20 @@ class RouteOrTerminalProcedure(TypedDict, total=False):
     STAR: TerminalProcedureIdentifier
 
 
-FlightLevelUnit = Literal["F", "A", "S", "M", "SM", "MM"]
+SpeedUnit = Literal[
+    "UNDEFINED",
+    "KNOTS",
+    "KILOMETERS_PER_HOUR",
+    "MACH_NUMBER",
+    "FEET_PER_MINUTE",
+]
 
-FlightLevel_DataType = str
+AirSpeed_DataType = str
 
 
-class FlightLevel(TypedDict, total=False):
-    unit: FlightLevelUnit
-    level: FlightLevel_DataType
-    ground: Literal["true", "false"]
-    ceiling: Literal["true", "false"]
+class AirSpeed(TypedDict, total=False):
+    speed: AirSpeed_DataType
+    unit: SpeedUnit
 
 
 TrafficVolumeId = str
@@ -102,64 +120,6 @@ class TrafficVolumeLocationInfo(TypedDict, total=False):
     trafficVolumeId: TrafficVolumeId
     referenceLocation: ReferenceLocation
 
-
-AirspaceId = str
-
-RunwayId = str
-
-
-class TerminalProcedure(TypedDict, total=False):
-    id: RouteId
-    DCT: str
-    pointId: PublishedPointId
-
-
-LoadState = Literal[
-    "NORMAL", "LOW_THRESHOLD", "HIGH_THRESHOLD", "OVERLOAD", "UNDEFINED"
-]
-
-SpeedUnit = Literal[
-    "UNDEFINED",
-    "KNOTS",
-    "KILOMETERS_PER_HOUR",
-    "MACH_NUMBER",
-    "FEET_PER_MINUTE",
-]
-
-AirSpeed_DataType = str
-
-
-class AirSpeed(TypedDict, total=False):
-    speed: AirSpeed_DataType
-    unit: SpeedUnit
-
-
-Network = Literal["AFTN", "SITA", "OTHER"]
-
-NetworkAddress_DataType = str
-
-
-class NetworkAddress(TypedDict, total=False):
-    network: Network
-    address: NetworkAddress_DataType
-
-
-class AerodromeOrPublishedPointId(TypedDict, total=False):
-    aerodrome: AerodromeICAOId
-    point: PublishedPointId
-
-
-FlightPlanProcessing = Literal[
-    "RAD",
-    "PROFILE_TUNING",
-    "AERODROME_FLIGHT_RULE",
-    "TP_AIRCRAFT_TYPE_CLASSIFICATION",
-    "DCT_LIMIT",
-    "SSR_CODE_ALLOCATION",
-    "FRA_DCT_LIMIT",
-]
-
-RestrictionId = str
 
 AirspaceType = Literal[
     "REG",
@@ -181,4 +141,54 @@ AirspaceType = Literal[
     "ERAS",
 ]
 
+AirspaceId = str
+
+Network = Literal["AFTN", "SITA", "OTHER"]
+
+NetworkAddress_DataType = str
+
+
+class NetworkAddress(TypedDict, total=False):
+    network: Network
+    address: NetworkAddress_DataType
+
+
+FlightPlanProcessing = Literal[
+    "RAD",
+    "PROFILE_TUNING",
+    "AERODROME_FLIGHT_RULE",
+    "TP_AIRCRAFT_TYPE_CLASSIFICATION",
+    "DCT_LIMIT",
+    "SSR_CODE_ALLOCATION",
+    "FRA_DCT_LIMIT",
+]
+
+RestrictionId = str
+
+
+class TerminalProcedure(TypedDict, total=False):
+    id: RouteId
+    DCT: str
+    pointId: PublishedPointId
+
+
+RunwayId = str
+
+
+class AerodromeOrPublishedPointId(TypedDict, total=False):
+    aerodrome: AerodromeICAOId
+    point: PublishedPointId
+
+
 FIRICAOId = str
+
+TrafficVolumeSetIdWildcard = str
+
+TrafficVolumeIdWildcard = str
+
+TrafficVolumeSetId = str
+
+
+class FlightLevelRange(TypedDict, total=False):
+    min: FlightLevel
+    max: FlightLevel
