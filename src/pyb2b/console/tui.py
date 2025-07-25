@@ -302,7 +302,7 @@ class B2B(App[None]):
             FlightListByMeasure,
         ]
 
-        if callsign or origin and destination and origin != destination:
+        if callsign or (origin and destination and origin != destination):
             callsign = callsign if callsign else "*"
             origin = origin if origin else "*"
             destination = destination if destination else "*"
