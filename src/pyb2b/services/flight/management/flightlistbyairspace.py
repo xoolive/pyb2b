@@ -10,7 +10,10 @@ from ....types.generated.flight import (
     FlightField,
     FlightListByAirspaceReply,
     FlightListByAirspaceRequest,
+    FlightOrFlightPlan,
+    TrafficType,
 )
+from ....types.generated.flow import CountsCalculationType
 
 Request = TypedDict(
     "Request", {"fl:FlightListByAirspaceRequest": FlightListByAirspaceRequest}
@@ -40,7 +43,16 @@ default_fields: list[FlightField] = [
 class FlightListByAirspace(
     DataFrameMixin, JSONMixin[FlightListByAirspaceReply]
 ):
-    ...
+    @property
+    def data(self) -> pd.DataFrame:
+        def eobt(entry: FlightOrFlightPlan) -> str:
+            return entry["flight"]["flightId"]["keys"]["estimatedOffBlockTime"]
+
+        flights = self.json["data"]["flights"]
+        if not isinstance(flights, list):
+            flights = [flights]
+        flights = sorted(flights, key=eobt)
+        return pd.json_normalize(flights)
 
 
 class _FlightListByAirspace:
@@ -51,6 +63,8 @@ class _FlightListByAirspace:
         stop: None | str | pd.Timestamp = None,
         include_proposal: bool = False,
         include_forecast: bool = True,
+        traffic_type: TrafficType = "DEMAND",
+        calculation_type: CountsCalculationType = "ENTRY",
         fields: list[FlightField] = default_fields,
     ) -> FlightListByAirspace:
         """Returns requested information about flights matching a criterion.
@@ -75,6 +89,8 @@ class _FlightListByAirspace:
             stop,
             include_proposal,
             include_forecast,
+            traffic_type,
+            calculation_type,
             fields,
         )
         reply = self.post(request)  # type: ignore
@@ -88,6 +104,8 @@ class _FlightListByAirspace:
         stop: None | str | pd.Timestamp = None,
         include_proposal: bool = False,
         include_forecast: bool = True,
+        traffic_type: TrafficType = "DEMAND",
+        calculation_type: CountsCalculationType = "ENTRY",
         fields: list[FlightField] = default_fields,
     ) -> FlightListByAirspace:
         """Returns requested information about flights matching a criterion.
@@ -112,6 +130,8 @@ class _FlightListByAirspace:
             stop,
             include_proposal,
             include_forecast,
+            traffic_type,
+            calculation_type,
             fields,
         )
         reply = await self.async_post(client, request)  # type: ignore
@@ -124,6 +144,8 @@ class _FlightListByAirspace:
         stop: None | str | pd.Timestamp,
         include_proposal: bool,
         include_forecast: bool,
+        traffic_type: TrafficType,
+        calculation_type: CountsCalculationType,
         fields: list[FlightField],
     ) -> Request:
         now = pd.Timestamp("now", tz="utc")
@@ -141,7 +163,7 @@ class _FlightListByAirspace:
             "dataset": {"type": "OPERATIONAL"},
             "includeProposalFlights": "true" if include_proposal else "false",
             "includeForecastFlights": "true" if include_forecast else "false",
-            "trafficType": "DEMAND",
+            "trafficType": traffic_type,
             "trafficWindow": {
                 "wef": f"{start:%Y-%m-%d %H:%M}",
                 "unt": f"{stop:%Y-%m-%d %H:%M}",
@@ -150,7 +172,7 @@ class _FlightListByAirspace:
             "countsInterval": {"duration": "0001", "step": "0001"},
             #  "worstLoadStateAtReferenceLocationType": "ENTRY",
             #  "compareWithOtherTrafficType": "LOAD",
-            "calculationType": "ENTRY",
+            "calculationType": calculation_type,
             "airspace": airspace,
         }
         return {
