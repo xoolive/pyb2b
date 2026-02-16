@@ -49,11 +49,11 @@ class DataFrameMixin:
     _obfuscate: None | list[str] = None
 
     @property
-    def data(self) -> pd.DataFrame:
+    def data(self) -> pd.DataFrame:  # type: ignore[return]
         ...
 
     def _repr_html_(self) -> None | str:
-        return self.data._repr_html_()  # type: ignore
+        return self.data._repr_html_()
 
     def __rich_console__(
         self,

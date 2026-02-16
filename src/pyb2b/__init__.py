@@ -38,9 +38,10 @@ https_proxy = config.get("network", "https.proxy", fallback="<>")
 
 pkcs12_filename = config.get("global", "pkcs12_filename", fallback="")
 pkcs12_password = config.get("global", "pkcs12_password", fallback="")
-b2b_mode: Literal["OPS", "PREOPS"]
+
+b2b_mode: Literal["OPS", "PREOPS", "OTHER"]
 b2b_mode = config.get("global", "mode", fallback="PREOPS")  # type: ignore
-if b2b_mode not in ["OPS", "PREOPS"]:
+if b2b_mode not in ["OPS", "PREOPS", "OTHER"]:
     raise ImportError("mode must be one of OPS or PREOPS")
 b2b_version = config.get("global", "version", fallback="27.0.0")
 

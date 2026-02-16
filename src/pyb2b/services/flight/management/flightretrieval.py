@@ -74,7 +74,7 @@ class FlightRetrieval(JSONMixin[FlightRetrievalReply]):
 
 default_fields: list[FlightField] = list(
     field
-    for field in FlightField.__args__  # type: ignore
+    for field in FlightField.__args__
     if field
     not in [
         # NM 27.0.0 - not a valid value of union type 'FlightField'
@@ -90,6 +90,9 @@ default_fields: list[FlightField] = list(
         # to resource '/operational/hotspots?kind=PROBLEM' is disabled
         "caughtInHotspots",
         "hotspots",
+        # forbidden for now
+        # "avoided_regulations",
+        # "target_time_over_fix",
     ]
 )
 
@@ -178,7 +181,7 @@ class _FlightRetrieval:
             "requestedFlightFields": default_fields,
         }
         return {
-            "fl:FlightRetrievalRequest": {  # type: ignore
+            "fl:FlightRetrievalRequest": {
                 "@xmlns:fl": "eurocontrol/cfmu/b2b/FlightServices",
                 **request,
             }

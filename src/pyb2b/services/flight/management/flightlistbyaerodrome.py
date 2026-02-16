@@ -162,7 +162,7 @@ class _FlightListByAerodrome:
             "aerodromeRole": aerodrome_role,
         }
         return {
-            "fl:FlightListByAerodromeRequest": {  # type: ignore
+            "fl:FlightListByAerodromeRequest": {
                 "@xmlns:fl": "eurocontrol/cfmu/b2b/FlightServices",
                 **request,
             }

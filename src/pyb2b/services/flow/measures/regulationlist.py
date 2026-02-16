@@ -23,8 +23,8 @@ Reply = TypedDict("Reply", {"fw:RegulationListReply": RegulationListReply})
 
 default_fields: list[RegulationField] = list(
     field
-    for field in RegulationField.__args__  # type: ignore
-    if field not in []
+    for field in RegulationField.__args__
+    if field not in []  # noqa: RUF060
 )
 
 
@@ -152,7 +152,7 @@ class _RegulationList:
         }
 
         return {
-            "fw:RegulationListRequest": {  # type: ignore
+            "fw:RegulationListRequest": {
                 "@xmlns:fw": "eurocontrol/cfmu/b2b/FlowServices",
                 **request,
             }

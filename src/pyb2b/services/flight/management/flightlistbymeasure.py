@@ -141,6 +141,7 @@ class _FlightListByMeasure:
         if start is not None:
             start = pd.Timestamp(start, tz="utc")
 
+        assert start is not None
         if stop is not None:
             stop = pd.Timestamp(stop, tz="utc")
         else:
@@ -177,7 +178,7 @@ class _FlightListByMeasure:
             "mode": mode,
         }
         return {
-            "fl:FlightListByMeasureRequest": {  # type: ignore
+            "fl:FlightListByMeasureRequest": {
                 "@xmlns:fl": "eurocontrol/cfmu/b2b/FlightServices",
                 **request,
             }

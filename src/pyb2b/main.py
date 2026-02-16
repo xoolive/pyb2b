@@ -56,6 +56,7 @@ class B2B(
 
     base_preops = "https://www.b2b.preops.nm.eurocontrol.int/"
     base_ops = "https://www.b2b.nm.eurocontrol.int/"
+    base_other = "https://www.b2b.nmvp.nm.eurocontrol.int:443/"
 
     PREOPS: ClassVar[OperationMode] = {
         "base_url": base_preops,
@@ -69,9 +70,15 @@ class B2B(
         "file_url": base_ops + "FILE_OPS/gateway/spec/",
     }
 
+    OTHER: ClassVar[OperationMode] = {
+        "base_url": base_other,
+        "post_url": base_other + "B2B_OPS/gateway/spec/",
+        "file_url": base_other + "FILE_OPS/gateway/spec/",
+    }
+
     def __init__(
         self,
-        mode: Literal["PREOPS", "OPS"],
+        mode: Literal["PREOPS", "OPS", "OTHER"],
         version: str,
         pkcs12_filename: str | Path,
         pkcs12_password: str,
@@ -140,7 +147,7 @@ class B2B(
         )
         res.raise_for_status()
         self.raise_xml_errors(data, res)
-        return xmltodict.parse(res.content)  # type: ignore
+        return xmltodict.parse(res.content)
 
     async def async_post(
         self,
@@ -156,4 +163,4 @@ class B2B(
         res = await client.send(request)
         res.raise_for_status()
         self.raise_xml_errors(data, res)
-        return xmltodict.parse(res.content)  # type: ignore
+        return xmltodict.parse(res.content)

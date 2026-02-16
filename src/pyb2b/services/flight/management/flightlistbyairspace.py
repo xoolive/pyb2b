@@ -52,7 +52,7 @@ class FlightListByAirspace(
         if not isinstance(flights, list):
             flights = [flights]
         flights = sorted(flights, key=eobt)
-        return pd.json_normalize(flights)
+        return pd.json_normalize(flights)  # type: ignore[invalid-argument-type]
 
 
 class _FlightListByAirspace:
@@ -152,6 +152,7 @@ class _FlightListByAirspace:
         if start is not None:
             start = pd.Timestamp(start, tz="utc")
 
+        assert start is not None
         if stop is not None:
             stop = pd.Timestamp(stop, tz="utc")
         else:
@@ -176,7 +177,7 @@ class _FlightListByAirspace:
             "airspace": airspace,
         }
         return {
-            "fl:FlightListByAirspaceRequest": {  # type: ignore
+            "fl:FlightListByAirspaceRequest": {
                 "@xmlns:fl": "eurocontrol/cfmu/b2b/FlightServices",
                 **request,
             }
